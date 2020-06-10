@@ -1,6 +1,9 @@
 ---
-title: "introduction"
-output: rmarkdown::
+title: "Intro to bsyncr"
+author: Cory Mosiman
+date: "June 9th, 2020"
+output: html_document
+fontsize: 10pt
 vignette: >
   %\VignetteIndexEntry{introduction}
   %\VignetteEngine{knitr::rmarkdown}
@@ -14,12 +17,13 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
+```{r setup, include=FALSE}
 library(nmecr)
 library(bsyncr)
 ```
 
 In general, the following workflow can be followed:
+
 1. Generate the root document
 2. Stub out a building, optionally providing an id for the building
 3. Stub out two scenarios, a baseline and reporting scenario
@@ -34,6 +38,8 @@ bsync_doc <- bsyncr::bsync_gen_root_doc() %>%
 
 ```{r}
 # Write the file to an output directory
-dir.create("output")
+if (!dir.exists("output") ) {
+  dir.create("output")
+}
 xml2::write_xml(bsync_doc, "output/test1.xml")
 ```
