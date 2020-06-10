@@ -1,0 +1,39 @@
+---
+title: "introduction"
+output: rmarkdown::
+vignette: >
+  %\VignetteIndexEntry{introduction}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(nmecr)
+library(bsyncr)
+```
+
+In general, the following workflow can be followed:
+1. Generate the root document
+2. Stub out a building, optionally providing an id for the building
+3. Stub out two scenarios, a baseline and reporting scenario
+
+```{r}
+schema_loc <- "https://raw.githubusercontent.com/BuildingSync/schema/83e345b6706dea0154cfec9a402d2637f31c570a/BuildingSync.xsd"
+bsync_doc <- bsyncr::bsync_gen_root_doc() %>%
+  bsyncr::bsync_stub_bldg(bldg_id = "My-Fav-Building") %>%
+  bsyncr::bsync_stub_scenarios(linked_building_id = "My-Fav-Building")
+
+```
+
+```{r}
+# Write the file to an output directory
+dir.create("output")
+xml2::write_xml(bsync_doc, "output/test1.xml")
+```
