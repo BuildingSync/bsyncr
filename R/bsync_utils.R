@@ -1,3 +1,15 @@
+# closure for generate_id so we can store static var "count"
+make.f <- function() {
+  count <- 0
+  f <- function(prefix) {
+    count <<- count + 1
+    return(sprintf("%s-%d", prefix, count))
+  }
+  return( f )
+}
+
+generate_id <- make.f()
+
 #' Stub out the root node for an auc:BuildingSync document
 #'
 #' @param raw_schema_location A character string pointing to a raw XSD document to be used in xsi:schemaLocation
@@ -8,7 +20,8 @@ bs_gen_root_doc <- function(raw_schema_location = "https://raw.githubusercontent
   doc <- xml2::xml_new_root("auc:BuildingSync",
                       "xmlns:auc" = "http://buildingsync.net/schemas/bedes-auc/2019",
                       "xsi:schemaLocation" = paste("http://buildingsync.net/schemas/bedes-auc/2019", raw_schema_location),
-                      "xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance")
+                      "xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
+                      "version" = "dev")
   return(doc)
 }
 
@@ -23,16 +36,13 @@ bs_stub_bldg <- function(doc, bldg_id = "Building-1") {
   doc %>%
     xml2::xml_root() %>%
     xml2::xml_add_child("auc:Facilities") %>%
-    xml2::xml_add_child("auc:Facility") %>%
+    xml2::xml_add_child("auc:Facility", "ID" = generate_id("Facility")) %>%
     xml2::xml_add_child("auc:Sites") %>%
-    xml2::xml_add_child("auc:Site") %>%
+    xml2::xml_add_child("auc:Site", "ID" = generate_id("Site")) %>%
     xml2::xml_add_child("auc:Buildings") %>%
-    xml2::xml_add_child("auc:Building") %>%
+    xml2::xml_add_child("auc:Building", "ID" = bldg_id) %>%
     xml2::xml_add_child("auc:PremisesName", bldg_id) %>%
     xml2::xml_root()
-
-  xml2::xml_find_first(doc, "//auc:Building") %>%
-    xml2::xml_set_attr("ID", bldg_id)
 
   return(doc)
 }
@@ -51,7 +61,7 @@ bs_stub_scenarios <- function(doc,
                                  linked_building_id = "Building-1") {
   xml2::xml_find_first(doc, "//auc:Sites") %>%
     xml2::xml_add_sibling("auc:Reports", .where="after") %>%
-    xml2::xml_add_child("auc:Report") %>%
+    xml2::xml_add_child("auc:Report", "ID" = generate_id("Report")) %>%
     xml2::xml_add_child("auc:Scenarios") %>%
     xml2::xml_add_child("auc:Scenario") %>%
     xml2::xml_add_sibling("auc:Scenario") %>%
@@ -97,7 +107,7 @@ bs_add_scenario_type <- function(x,
       xml2::xml_add_child("auc:CurrentBuilding")
   } else if (sc_type == "Package of Measures") {
     x3 <- x2 %>%
-      xml2::xml_add_child("auc:PackageOfMeasures")
+      xml2::xml_add_child("auc:PackageOfMeasures", "ID" = generate_id("POM"))
   }
 
   x4 <- x3 %>%
@@ -150,16 +160,15 @@ bs_stub_derived_model <- function(x,
     x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:PackageOfMeasures")
   }
   x2 %>%
-    xml2::xml_add_child("auc:DerivedModels") %>%
-    xml2::xml_add_child("auc:DerivedModel") %>%
+    xml2::xml_add_child("auc:DerivedModel", "ID" = generate_id("DerivedModel")) %>%
     xml2::xml_add_child("auc:DerivedModelName", dm_id) %>%
-    xml2::xml_add_sibling("auc:DerivedModelPeriod", dm_period) %>%
+    xml2::xml_add_sibling("auc:Models") %>%
+    xml2::xml_add_child("auc:Model") %>%
+    xml2::xml_add_child("auc:StartTimestamp") %>%
+    xml2::xml_add_sibling("auc:EndTimestamp") %>%
     xml2::xml_add_sibling("auc:DerivedModelInputs") %>%
-    xml2::xml_add_sibling("auc:DerivedModelParameters") %>%
-    xml2::xml_add_sibling("auc:DerivedModelPerformance") %>%
-    xml2::xml_add_sibling("auc:DerivedModelOutputs") %>%
-    xml2::xml_parent() %>%
-    xml2::xml_set_attr("ID", dm_id)
+    xml2::xml_add_sibling("auc:DerivedModelCoefficients") %>%
+    xml2::xml_add_sibling("auc:DerivedModelPerformance")
 
   return(x)
 }
@@ -186,8 +195,10 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
                                  explanatory_variable_units = "Fahrenheit, F") {
 
   # Extract the necessary nodes to manipulate
+  dm_start <- xml2::xml_find_first(x, "//auc:Models/auc:Model/auc:StartTimestamp")
+  dm_end <- xml2::xml_find_first(x, "//auc:Models/auc:Model/auc:EndTimestamp")
   dm_inputs <- xml2::xml_find_first(x, "//auc:DerivedModelInputs")
-  dm_params <- xml2::xml_find_first(x, "//auc:DerivedModelParameters")
+  dm_coeff <- xml2::xml_find_first(x, "//auc:DerivedModelCoefficients")
   dm_perf <- xml2::xml_find_first(x, "//auc:DerivedModelPerformance")
 
   # Create a named list (like key-value hash) for mapping nmecr concepts to BSync
@@ -214,17 +225,21 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   bsync_start_dt <- format(anytime::anytime(model_start_dt), "%Y-%m-%dT%H:%M:%S")
   bsync_end_dt <- format(anytime::anytime(model_end_dt), "%Y-%m-%dT%H:%M:%S")
 
+  # add model data
+  dm_start %>%
+    xml2::xml_set_text(bsync_start_dt)
+  dm_end %>%
+    xml2::xml_set_text(bsync_end_dt)
+
   # Add inputs data
-  dm_inputs %>% xml2::xml_add_child("auc:ModelType", bsync_model_type) %>%
-    xml2::xml_add_sibling("auc:NormalizationMethod", normalization_method) %>%
-    xml2::xml_add_sibling("auc:BaselinePeriodStartTimestamp", bsync_start_dt) %>%
-    xml2::xml_add_sibling("auc:BaselinePeriodEndTimestamp", bsync_end_dt) %>%
-    xml2::xml_add_sibling("auc:IntervalFrequency", bsync_interval) %>%
+  dm_inputs %>%
+    xml2::xml_add_child("auc:IntervalFrequency", bsync_interval) %>%
     xml2::xml_add_sibling("auc:ResponseVariable") %>%
     xml2::xml_add_child("auc:ResponseVariableName", response_variable) %>%
     xml2::xml_add_sibling("auc:ResponseVariableUnits", response_variable_units) %>%
-    xml2::xml_add_sibling("auc:ResponseVariableEndUse", response_variable_end_use) %>%
-    xml2::xml_parent() %>% xml2::xml_parent() %>%
+    xml2::xml_add_sibling("auc:ResponseVariableEndUse", response_variable_end_use)
+
+  dm_inputs %>%
     xml2::xml_add_child("auc:ExplanatoryVariables") %>%
     xml2::xml_add_child("auc:ExplanatoryVariable") %>%
     xml2::xml_add_child("auc:ExplanatoryVariableName", explanatory_variable_name) %>%
@@ -236,10 +251,15 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   if (model_type == "SLR") {
     bsync_intercept <- coeffs[["(Intercept)"]]
     bsync_beta1 <- coeffs[["temp"]] # TODO: How do these get named more generally?
-    dm_params %>%
-      xml2::xml_add_child("auc:Intercept", bsync_intercept) %>%
-      xml2::xml_add_sibling("auc:Beta1", bsync_beta1)
+  } else {
+    stop("Unhandled model type")
   }
+
+  dm_coeff %>%
+    xml2::xml_add_child("auc:Guideline14Model") %>%
+    xml2::xml_add_child("auc:ModelType", bsync_model_type) %>%
+    xml2::xml_add_sibling("auc:Intercept", bsync_intercept) %>%
+    xml2::xml_add_sibling("auc:Beta1", bsync_beta1)
 
   # Evaluate model performance and map to BSync
   perf <- nmecr::calculate_summary_statistics(nmecr_baseline_model)
