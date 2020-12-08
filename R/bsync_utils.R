@@ -1,3 +1,5 @@
+library('rnoaa');
+
 # closure for generate_id so we can store static var "count"
 make.f <- function() {
   count <- 0
