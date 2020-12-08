@@ -1,5 +1,3 @@
-library('rnoaa')
-
 # closure for generate_id so we can store static var "count"
 make.f <- function() {
   count <- 0
@@ -211,13 +209,13 @@ bs_parse_nmecr_df <- function(tree) {
   ts_end = max(ts_df$time)
 
   # handle weather
-  station_data <- ghcnd_stations() # Takes a while to run
+  station_data <- rnoaa::ghcnd_stations() # Takes a while to run
   lat_lon_df <- data.frame(id = c("my_building"),
                            latitude = c(lat_dbl),
                            longitude = c(lng_dbl))
 
   # get nearest station with average temp data
-  nearby_stations <- meteo_nearby_stations(
+  nearby_stations <- rnoaa::meteo_nearby_stations(
     lat_lon_df = lat_lon_df,
     station_data = station_data,
     limit=1,
@@ -225,7 +223,7 @@ bs_parse_nmecr_df <- function(tree) {
   )
 
   # get MONTHLY temp data from station
-  weather_result <- ncdc(
+  weather_result <- rnoaa::ncdc(
     datasetid='GSOM',
     stationid=sprintf('GHCND:%s', nearby_stations$my_building$id),
     datatypeid='TAVG',
