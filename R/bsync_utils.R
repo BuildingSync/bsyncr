@@ -1,3 +1,5 @@
+library('rnoaa')
+
 # closure for generate_id so we can store static var "count"
 make.f <- function() {
   count <- 0
@@ -171,6 +173,96 @@ bs_stub_derived_model <- function(x,
     xml2::xml_add_sibling("auc:DerivedModelPerformance")
 
   return(x)
+}
+
+#' Generate a data frame usable by nmecr for modeling
+#'
+#' @param tree XML tree to parse
+
+#'
+#' @return x Data frame for use with nmecr's model_with_* functions
+#' @export
+bs_parse_nmecr_df <- function(tree) {
+  lat_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Latitude"))
+  lng_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Longitude"))
+  lat_dbl <- as.double(lat_str)
+  lng_dbl <- as.double(lng_str)
+  resource_use_id_str <- xml2::xml_attr(xml2::xml_find_first(tree, "//auc:ResourceUses/auc:ResourceUse[auc:EnergyResource = 'Electricity']"), "ID")
+
+  ts_nodes = xml2::xml_find_all(tree, sprintf("//auc:TimeSeries[auc:ResourceUseID/@IDref = '%s']", resource_use_id_str))
+
+  # construct the eload dataframe
+  n_samples = length(ts_nodes)
+  ts_matrix <- matrix(ncol=2, nrow=n_samples)
+  for(i in 1:n_samples){
+    ts_node <- ts_nodes[i]
+    start_timestamp <- xml2::xml_text(xml2::xml_find_first(ts_node, "auc:StartTimestamp"))
+    reading <- xml2::xml_text(xml2::xml_find_first(ts_node, "auc:IntervalReading"))
+    ts_matrix[i,] <- c(start_timestamp, reading)
+  }
+  ts_df <- data.frame(ts_matrix)
+  colnames(ts_df) <- c("time", "eload")
+
+  # fix data types
+  ts_df[, "eload"] <- as.double(ts_df[, "eload"])
+  ts_df[, "time"] <- as.POSIXct(ts_df[, "time"])
+
+  ts_start = min(ts_df$time)
+  ts_end = max(ts_df$time)
+
+  # handle weather
+  station_data <- ghcnd_stations() # Takes a while to run
+  lat_lon_df <- data.frame(id = c("my_building"),
+                           latitude = c(lat_dbl),
+                           longitude = c(lng_dbl))
+
+  # get nearest station with average temp data
+  nearby_stations <- meteo_nearby_stations(
+    lat_lon_df = lat_lon_df,
+    station_data = station_data,
+    limit=1,
+    var=c("TAVG")
+  )
+
+  # get MONTHLY temp data from station
+  weather_result <- ncdc(
+    datasetid='GSOM',
+    stationid=sprintf('GHCND:%s', nearby_stations$my_building$id),
+    datatypeid='TAVG',
+    # messy solution, but ensures that we get data before our start time
+    startdate =  strftime(ts_start - (60 * 60 * 24 * 31) , "%Y-%m-%dT%H:%M:%S"),
+    enddate = ts_end,
+    add_units=TRUE,
+  )
+
+  weather_data <- weather_result$data
+  temp_matrix <- matrix(ncol=2, nrow=nrow(weather_data))
+  for (row in 1:nrow(weather_data)) {
+    row_units <- weather_data[row, "units"]
+    row_date <- weather_data[[row, "date"]]
+    if (row_units == "celsius") {
+      row_temp <- (weather_data[[row, "value"]] * 9 / 5) + 32
+    } else if (row_units == "farenheit") {
+      row_temp <- weather_data[[row, "value"]]
+    } else {
+      stop(sprintf("Invalid unit type: %s", row_units))
+    }
+    temp_matrix[row,] <- c(row_date, row_temp)
+  }
+  temp_df <- data.frame(temp_matrix)
+  colnames(temp_df) <- c("time", "temp")
+
+  # fix data types
+  temp_df[, "temp"] <- as.double(temp_df[, "temp"])
+  temp_df[, "time"] <- as.POSIXct(temp_df[, "time"])
+
+  data_int <- "Monthly"
+  return(nmecr::create_dataframe(eload_data = ts_df,
+                                  temp_data = temp_df,
+                                  start_date = format(ts_start, format="%m/%d/%y %H:%M"),
+                                  end_date = format(ts_end, format="%m/%d/%y %H:%M"),
+                                  convert_to_data_interval = data_int,
+                                  timestamps="start"))
 }
 
 #' Add inputs, parameters, and performance statistics to a auc:DerivedModel
