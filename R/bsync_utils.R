@@ -1,4 +1,5 @@
 library('rnoaa');
+library('lubridate');
 
 # closure for generate_id so we can store static var "count"
 make.f <- function() {
@@ -236,14 +237,19 @@ bs_parse_nmecr_df <- function(tree) {
   )
 
   weather_data <- weather_result$data
-  temp_matrix <- matrix(ncol=2, nrow=nrow(weather_data))
-  for (row in 1:nrow(weather_data)) {
-    row_units <- weather_data[row, "units"]
-    row_date <- weather_data[[row, "date"]]
+  temp_matrix <- matrix(ncol=2, nrow=n_samples)
+  for (row in 1:n_samples) {
+    # find the weather row with a date closest to our current eload time
+    # this is not the correct way to do this, but good enough for now
+    # it would seem the nmecr package should do this for us, but it didn't sometimes...
+    date_diffs <- abs(as.POSIXct(weather_data$date) - ts_df[[row, "time"]])
+    closest_row <- weather_data[which.min(date_diffs),]
+    row_date <- ts_df[[row, "time"]]
+    row_units <- closest_row$units
     if (row_units == "celsius") {
-      row_temp <- (weather_data[[row, "value"]] * 9 / 5) + 32
+      row_temp <- (closest_row$value * 9 / 5) + 32
     } else if (row_units == "farenheit") {
-      row_temp <- weather_data[[row, "value"]]
+      row_temp <- closest_row$value
     } else {
       stop(sprintf("Invalid unit type: %s", row_units))
     }
@@ -254,7 +260,7 @@ bs_parse_nmecr_df <- function(tree) {
 
   # fix data types
   temp_df[, "temp"] <- as.double(temp_df[, "temp"])
-  temp_df[, "time"] <- as.POSIXct(temp_df[, "time"])
+  temp_df[, "time"] <- as.POSIXct.numeric(temp_df[, "time"], origin=lubridate::origin)
 
   data_int <- "Monthly"
   return(nmecr::create_dataframe(eload_data = ts_df,
@@ -358,8 +364,8 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   dm_perf %>%
     xml2::xml_add_child("auc:RSquared", format(perf[["R_squared"]], scientific = FALSE)) %>%
     xml2::xml_add_sibling("auc:CVRMSE", format(max(perf[["CVRMSE %"]], 0), scientific = FALSE)) %>%
-    xml2::xml_add_sibling("auc:NDBE", format(max(perf[["NDBE %"]], 0), scientific = FALSE)) %>%
-    xml2::xml_add_sibling("auc:NMBE", format(max(perf[["NMBE %"]], 0), scientific = FALSE))
+    xml2::xml_add_sibling("auc:NDBE", format(round(max(as.numeric(perf[["NDBE %"]]), 0), 2), scientific = FALSE, nsmall=2)) %>%
+    xml2::xml_add_sibling("auc:NMBE", format(round(max(as.numeric(perf[["NMBE %"]]), 0), 2), scientific = FALSE, nsmall=2))
 
   return(x)
 }
