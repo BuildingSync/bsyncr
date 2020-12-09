@@ -6,7 +6,7 @@ make.f <- function() {
   count <- 0
   f <- function(prefix) {
     count <<- count + 1
-    return(sprintf("%s-%d", prefix, count))
+    return(sprintf("bsyncr-%s-%d", prefix, count))
   }
   return( f )
 }
@@ -62,31 +62,12 @@ bs_stub_scenarios <- function(doc,
                                  baseline_id = "Scenario-Baseline",
                                  reporting_id = "Scenario-Reporting",
                                  linked_building_id = "Building-1") {
-  xml2::xml_find_first(doc, "//auc:Sites") %>%
-    xml2::xml_add_sibling("auc:Reports", .where="after") %>%
+  xml2::xml_find_first(doc, "//auc:Reports") %>%
     xml2::xml_add_child("auc:Report", "ID" = generate_id("Report")) %>%
     xml2::xml_add_child("auc:Scenarios") %>%
-    xml2::xml_add_child("auc:Scenario") %>%
-    xml2::xml_add_sibling("auc:Scenario") %>%
-    xml2::xml_root()
-
-  scenarios <- xml2::xml_find_all(doc, "//auc:Scenario")
-
-  # First scenario considered will be the baseline scenario
-  scenarios[[1]] %>%
-    xml2::xml_set_attr("ID", baseline_id)
-
-  scenarios[[1]] %>%
-    bs_add_scenario_type(sc_type="Current Building", measured = TRUE) %>%
-    bs_link_bldg(linked_building_id)
-
-  # Second scenario will be the reporting scenario
-  scenarios[[2]] %>%
-    xml2::xml_set_attr("ID", reporting_id)
-
-  scenarios[[2]] %>%
-    bs_add_scenario_type(sc_type="Package of Measures", measured = TRUE) %>%
-    bs_link_bldg(linked_building_id)
+    xml2::xml_add_child("auc:Scenario", "ID" = baseline_id) %>%
+    xml2::xml_add_child("auc:ScenarioType") %>%
+    xml2::xml_add_child("auc:CurrentBuilding")
 
   return(doc)
 }
@@ -156,7 +137,8 @@ bs_link_bldg <- function(x, linked_building_id) {
 bs_stub_derived_model <- function(x,
                                dm_id,
                                dm_period = c("Baseline", "Reporting"),
-                               sc_type = c("Current Building", "Package of Measures")) {
+                               sc_type = c("Current Building", "Package of Measures"),
+                               measured_scenario_id = "Scenario-Measured") {
   if (sc_type == "Current Building") {
     x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:CurrentBuilding")
   } else if (sc_type == "Package of Measures") {
@@ -165,6 +147,7 @@ bs_stub_derived_model <- function(x,
   x2 %>%
     xml2::xml_add_child("auc:DerivedModel", "ID" = generate_id("DerivedModel")) %>%
     xml2::xml_add_child("auc:DerivedModelName", dm_id) %>%
+    xml2::xml_add_sibling("auc:MeasuredScenarioID", "IDref" = measured_scenario_id) %>%
     xml2::xml_add_sibling("auc:Models") %>%
     xml2::xml_add_child("auc:Model") %>%
     xml2::xml_add_child("auc:StartTimestamp") %>%
@@ -183,7 +166,7 @@ bs_stub_derived_model <- function(x,
 #'
 #' @return x Data frame for use with nmecr's model_with_* functions
 #' @export
-bs_parse_nmecr_df <- function(tree) {
+bs_parse_nmecr_df <- function(tree, insert_weather_data=FALSE) {
   lat_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Latitude"))
   lng_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Longitude"))
   lat_dbl <- as.double(lat_str)
@@ -261,6 +244,18 @@ bs_parse_nmecr_df <- function(tree) {
   # fix data types
   temp_df[, "temp"] <- as.double(temp_df[, "temp"])
   temp_df[, "time"] <- as.POSIXct.numeric(temp_df[, "time"], origin=lubridate::origin)
+
+  if (insert_weather_data == TRUE) {
+    ts_data_elem <- xml2::xml_find_first(tree, '//auc:Scenario[auc:ResourceUses/auc:ResourceUse/auc:EnergyResource/text() = "Electricity"]/auc:TimeSeriesData')
+    for (row in 1:n_samples) {
+      ts_data_elem %>%
+        xml2::xml_add_child("auc:TimeSeries", "ID" = generate_id("TimeSeries")) %>%
+          xml2::xml_add_child("auc:TimeSeriesReadingQuantity", "Dry Bulb Temperature") %>%
+          xml2::xml_add_sibling("auc:StartTimestamp", strftime(temp_df[[row, "time"]] , "%Y-%m-%dT%H:%M:%S")) %>%
+          xml2::xml_add_sibling("auc:IntervalFrequency", "Month") %>%
+          xml2::xml_add_sibling("auc:IntervalReading", temp_df[[row, "temp"]])
+    }
+  }
 
   data_int <- "Monthly"
   return(nmecr::create_dataframe(eload_data = ts_df,
