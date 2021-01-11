@@ -379,6 +379,9 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
     stop("Unhandled model type")
   }
 
+  dm_params <- dm_coeff %>% xml2::xml_add_child("auc:Guideline14Model")
+  dm_params >%> xml2::xml_add_child("auc:ModelType", bsync_model_type)
+
   if (bsync_intercept != NULL) {
     dm_params %>%
       xml2::xml_add_child("auc:Intercept", bsync_intercept)
@@ -395,6 +398,14 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
     dm_params %>%
       xml2::xml_add_child("auc:Beta3", bsync_beta3)
   }
+
+  # Evaluate model performance and map to BSync
+  perf <- nmecr::calculate_summary_statistics(nmecr_baseline_model)
+  dm_perf %>%
+    xml2::xml_add_child("auc:RSquared", format(perf[["R_squared"]], scientific = FALSE)) %>%
+    xml2::xml_add_sibling("auc:CVRMSE", format(max(perf[["CVRMSE %"]], 0), scientific = FALSE)) %>%
+    xml2::xml_add_sibling("auc:NDBE", format(round(max(as.numeric(perf[["NDBE %"]]), 0), 2), scientific = FALSE, nsmall=2)) %>%
+    xml2::xml_add_sibling("auc:NMBE", format(round(max(as.numeric(perf[["NMBE %"]]), 0), 2), scientific = FALSE, nsmall=2))
 
   return(x)
 }
