@@ -357,7 +357,7 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
     bsync_beta1 <- coeffs[["U1.independent_variable"]]
     # psi[2] contains the estimated change point
     bsync_beta2 <- nmecr_baseline_model$model$psi[2]
-  
+
     # for current nmecr implementation, the sign for beta 1 and 2 is flipped for
     # the heating models, which we account for here
     if (grepl('heating', bsync_model_type)) {
@@ -382,19 +382,19 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   dm_params <- dm_coeff %>% xml2::xml_add_child("auc:Guideline14Model")
   dm_params %>% xml2::xml_add_child("auc:ModelType", bsync_model_type)
 
-  if (bsync_intercept != NULL) {
+  if (!is.null(bsync_intercept)) {
     dm_params %>%
       xml2::xml_add_child("auc:Intercept", bsync_intercept)
   }
-  if (bsync_beta1 != NULL) {
+  if (!is.null(bsync_beta1)) {
     dm_params %>%
       xml2::xml_add_child("auc:Beta1", bsync_beta1)
   }
-  if (bsync_beta2 != NULL) {
+  if (!is.null(bsync_beta2)) {
     dm_params %>%
       xml2::xml_add_child("auc:Beta2", bsync_beta2)
   }
-  if (bsync_beta3 != NULL) {
+  if (!is.null(bsync_beta3)) {
     dm_params %>%
       xml2::xml_add_child("auc:Beta3", bsync_beta3)
   }
