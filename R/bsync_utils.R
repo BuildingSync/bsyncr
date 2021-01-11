@@ -343,35 +343,46 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   bsync_beta1 <- NULL
   bsync_beta2 <- NULL
   bsync_beta3 <- NULL
-  if (bsync_model_type == "2 parameter simple linear regression") {
-    bsync_intercept <- coeffs[["(Intercept)"]]
-    bsync_beta1 <- coeffs[["temp"]]
-  } else if (bsync_model_type == "3 parameter heating change point model" || bsync_model_type == "3 parameter cooling change point model") {
-    bsync_intercept <- coeffs[["(Intercept)"]]
-    bsync_beta1 <- coeffs[["U1.independent_variable"]]
-    # psi[2] contains the estimated change point
-    bsync_beta2 <- nmecr_baseline_model$model$psi[2]
+  # TODO: find a better way of cathching cases where we faild to fit the model
+  tryCatch({
+    if (bsync_model_type == "2 parameter simple linear regression") {
+      bsync_intercept <- coeffs[["(Intercept)"]]
+      bsync_beta1 <- coeffs[["temp"]]
+    } else if (bsync_model_type == "3 parameter heating change point model" || bsync_model_type == "3 parameter cooling change point model") {
+      bsync_intercept <- coeffs[["(Intercept)"]]
+      bsync_beta1 <- coeffs[["U1.independent_variable"]]
+      # psi[2] contains the estimated change point
+      bsync_beta2 <- nmecr_baseline_model$model$psi[2]
 
-    # for current nmecr implementation, the sign for beta 1 and 2 is flipped for
-    # the heating models, which we account for here
-    if (grepl('heating', bsync_model_type)) {
-      bsync_beta1 <- -1 * bsync_beta1
-      bsync_beta2 <- -1 * bsync_beta2
+      # for current nmecr implementation, the sign for beta 1 and 2 is flipped for
+      # the heating models, which we account for here
+      if (grepl('heating', bsync_model_type)) {
+        bsync_beta1 <- -1 * bsync_beta1
+        bsync_beta2 <- -1 * bsync_beta2
+      }
+    } else if (bsync_model_type == "4 parameter change point model") {
+      # FIXME: this is not the correct intercept
+      bsync_intercept <- coeffs[["(Intercept)"]]
+      bsync_beta1 <- coeffs[["independent_variable"]]
+
+      # TODO: verify this is _always_ the wrong sign
+      # flip the sign b/c current nmecr implementation has it incorrectly set
+      bsync_beta2 <- -1 * coeffs[["U1.independent_variable"]]
+
+      # psi[2] contains the estimated change point
+      bsync_beta3 <- nmecr_baseline_model$model$psi[2]
+    } else {
+      stop("Unhandled model type")
     }
-  } else if (bsync_model_type == "4 parameter change point model") {
-    # FIXME: this is not the correct intercept
-    bsync_intercept <- coeffs[["(Intercept)"]]
-    bsync_beta1 <- coeffs[["independent_variable"]]
-
-    # TODO: verify this is _always_ the wrong sign
-    # flip the sign b/c current nmecr implementation has it incorrectly set
-    bsync_beta2 <- -1 * coeffs[["U1.independent_variable"]]
-
-    # psi[2] contains the estimated change point
-    bsync_beta3 <- nmecr_baseline_model$model$psi[2]
-  } else {
-    stop("Unhandled model type")
-  }
+  }, error = function(e) {
+    print(e)
+    # if we get a subscript out of bounds error, assume it's b/c we failed
+    # to fit the model and as a result we would be missing values inside of our result
+    if (e$message == "subscript out of bounds") {
+      stop('Failed to parse model for BuildingSync. This is most likely because the model failed to fit')
+    }
+    stop(e$message)
+  })
 
   dm_params <- dm_coeff %>% xml2::xml_add_child("auc:Guideline14Model")
   dm_params %>% xml2::xml_add_child("auc:ModelType", bsync_model_type)
