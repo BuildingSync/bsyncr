@@ -197,9 +197,13 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
     "Hourly" = "Hour",
     "SLR" = "2 parameter simple linear regression",
     "Three Parameter Heating" = "3 parameter heating change point model",
+    "3PH" = "3 parameter heating change point model",
     "Three Parameter Cooling" = "3 parameter cooling change point model",
+    "3PC" = "3 parameter cooling change point model",
     "Four Parameter Linear Model" = "4 parameter change point model",
-    "Five Parameter Linear Model" = "5 parameter change point model"
+    "4P" = "4 parameter change point model",
+    "Five Parameter Linear Model" = "5 parameter change point model",
+    "5P" = "5 parameter change point model"
   )
 
   # Extract desired concepts from nmecr model
@@ -231,14 +235,56 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
     xml2::xml_add_sibling("auc:ExplanatoryVariableUnits", explanatory_variable_units)
 
   # Based on model type, map parameters to BSync
-  # TODO: add additional supported models
   coeffs <- nmecr_baseline_model$model$coefficients
-  if (model_type == "SLR") {
+  bsync_intercept <- NULL
+  bsync_beta1 <- NULL
+  bsync_beta2 <- NULL
+  bsync_beta3 <- NULL
+  if (bsync_model_type == "2 parameter simple linear regression") {
     bsync_intercept <- coeffs[["(Intercept)"]]
-    bsync_beta1 <- coeffs[["temp"]] # TODO: How do these get named more generally?
+    bsync_beta1 <- coeffs[["temp"]]
+  } else if (bsync_model_type == "3 parameter heating change point model" || bsync_model_type == "3 parameter cooling change point model") {
+    bsync_intercept <- coeffs[["(Intercept)"]]
+    bsync_beta1 <- coeffs[["U1.independent_variable"]]
+    # psi[2] contains the estimated change point
+    bsync_beta2 <- nmecr_baseline_model$model$psi[2]
+  
+    # for current nmecr implementation, the sign for beta 1 and 2 is flipped for
+    # the heating models, which we account for here
+    if (grepl('heating', bsync_model_type)) {
+      bsync_beta1 <- -1 * bsync_beta1
+      bsync_beta2 <- -1 * bsync_beta2
+    }
+  } else if (bsync_model_type == "4 parameter change point model") {
+    # FIXME: this is not the correct intercept
+    bsync_intercept <- coeffs[["(Intercept)"]]
+    bsync_beta1 <- coeffs[["independent_variable"]]
+
+    # TODO: verify this is _always_ the wrong sign
+    # flip the sign b/c current nmecr implementation has it incorrectly set
+    bsync_beta2 <- -1 * coeffs[["U1.independent_variable"]]
+
+    # psi[2] contains the estimated change point
+    bsync_beta3 <- nmecr_baseline_model$model$psi[2]
+  } else {
+    stop('Unhandled BuildingSync model type')
+  }
+
+  if (bsync_intercept != NULL) {
     dm_params %>%
-      xml2::xml_add_child("auc:Intercept", bsync_intercept) %>%
-      xml2::xml_add_sibling("auc:Beta1", bsync_beta1)
+      xml2::xml_add_child("auc:Intercept", bsync_intercept)
+  }
+  if (bsync_beta1 != NULL) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta1", bsync_beta1)
+  }
+  if (bsync_beta2 != NULL) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta2", bsync_beta2)
+  }
+  if (bsync_beta3 != NULL) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta3", bsync_beta3)
   }
 
   # Evaluate model performance and map to BSync
