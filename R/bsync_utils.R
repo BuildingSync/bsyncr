@@ -380,7 +380,7 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   }
 
   dm_params <- dm_coeff %>% xml2::xml_add_child("auc:Guideline14Model")
-  dm_params >%> xml2::xml_add_child("auc:ModelType", bsync_model_type)
+  dm_params %>% xml2::xml_add_child("auc:ModelType", bsync_model_type)
 
   if (bsync_intercept != NULL) {
     dm_params %>%
