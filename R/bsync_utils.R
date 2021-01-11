@@ -67,7 +67,7 @@ bs_stub_scenarios <- function(doc,
     xml2::xml_add_child("auc:Scenarios") %>%
     xml2::xml_add_child("auc:Scenario", "ID" = baseline_id) %>%
     xml2::xml_add_child("auc:ScenarioType") %>%
-    xml2::xml_add_child("auc:CurrentBuilding")
+    xml2::xml_add_child("auc:DerivedModel", "ID" = generate_id("DerivedModel"))
 
   return(doc)
 }
@@ -129,7 +129,6 @@ bs_link_bldg <- function(x, linked_building_id) {
 #' @param x An xml_node for an auc:Scenario
 #' @param dm_id The desired ID for the new derived model to be added
 #' @param dm_period A character string to define the model period: "Baseline", "Reporting"
-#' @param sc_type A character string indicating the 'type' of the scenario: "Current Building", "Package of Measures"
 
 #'
 #' @return x An xml_node for the same auc:Scenario, with the addition of the derived model
@@ -137,19 +136,14 @@ bs_link_bldg <- function(x, linked_building_id) {
 bs_stub_derived_model <- function(x,
                                dm_id,
                                dm_period = c("Baseline", "Reporting"),
-                               sc_type = c("Current Building", "Package of Measures"),
                                measured_scenario_id = "Scenario-Measured") {
-  if (sc_type == "Current Building") {
-    x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:CurrentBuilding")
-  } else if (sc_type == "Package of Measures") {
-    x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:PackageOfMeasures")
-  }
+  x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:DerivedModel")
+
   x2 %>%
-    xml2::xml_add_child("auc:DerivedModel", "ID" = generate_id("DerivedModel")) %>%
     xml2::xml_add_child("auc:DerivedModelName", dm_id) %>%
     xml2::xml_add_sibling("auc:MeasuredScenarioID", "IDref" = measured_scenario_id) %>%
     xml2::xml_add_sibling("auc:Models") %>%
-    xml2::xml_add_child("auc:Model") %>%
+    xml2::xml_add_child("auc:Model", ID = generate_id("Model")) %>%
     xml2::xml_add_child("auc:StartTimestamp") %>%
     xml2::xml_add_sibling("auc:EndTimestamp") %>%
     xml2::xml_add_sibling("auc:DerivedModelInputs") %>%
