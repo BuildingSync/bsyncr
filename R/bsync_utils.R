@@ -361,16 +361,22 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
         bsync_beta2 <- -1 * bsync_beta2
       }
     } else if (bsync_model_type == "4 parameter change point model") {
-      # FIXME: this is not the correct intercept
-      bsync_intercept <- coeffs[["(Intercept)"]]
+      # to get the intercept `C` according to ASHRAE Guideline 14-2014, Figure D-1
+      # we must predict the eload at the estimated temperature change point
+      temp_change_point <- nmecr_baseline_model$model$psi[2]
+      predictions <- calculate_model_predictions(
+        training_data=nmecr_baseline_model$training_data,
+        prediction_data=as.data.frame(list(time=c(2019-01-01), temp=c(temp_change_point))),
+        modeled_object=nmecr_baseline_model
+      )
+      bsync_intercept <- predictions$predictions[1]
       bsync_beta1 <- coeffs[["independent_variable"]]
 
       # TODO: verify this is _always_ the wrong sign
       # flip the sign b/c current nmecr implementation has it incorrectly set
       bsync_beta2 <- -1 * coeffs[["U1.independent_variable"]]
 
-      # psi[2] contains the estimated change point
-      bsync_beta3 <- nmecr_baseline_model$model$psi[2]
+      bsync_beta3 <- temp_change_point
     } else {
       stop("Unhandled model type")
     }
