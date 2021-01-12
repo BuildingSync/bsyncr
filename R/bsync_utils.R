@@ -67,7 +67,7 @@ bs_stub_scenarios <- function(doc,
     xml2::xml_add_child("auc:Scenarios") %>%
     xml2::xml_add_child("auc:Scenario", "ID" = baseline_id) %>%
     xml2::xml_add_child("auc:ScenarioType") %>%
-    xml2::xml_add_child("auc:CurrentBuilding")
+    xml2::xml_add_child("auc:DerivedModel", "ID" = generate_id("DerivedModel"))
 
   return(doc)
 }
@@ -129,7 +129,6 @@ bs_link_bldg <- function(x, linked_building_id) {
 #' @param x An xml_node for an auc:Scenario
 #' @param dm_id The desired ID for the new derived model to be added
 #' @param dm_period A character string to define the model period: "Baseline", "Reporting"
-#' @param sc_type A character string indicating the 'type' of the scenario: "Current Building", "Package of Measures"
 
 #'
 #' @return x An xml_node for the same auc:Scenario, with the addition of the derived model
@@ -137,19 +136,14 @@ bs_link_bldg <- function(x, linked_building_id) {
 bs_stub_derived_model <- function(x,
                                dm_id,
                                dm_period = c("Baseline", "Reporting"),
-                               sc_type = c("Current Building", "Package of Measures"),
                                measured_scenario_id = "Scenario-Measured") {
-  if (sc_type == "Current Building") {
-    x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:CurrentBuilding")
-  } else if (sc_type == "Package of Measures") {
-    x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:PackageOfMeasures")
-  }
+  x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:DerivedModel")
+
   x2 %>%
-    xml2::xml_add_child("auc:DerivedModel", "ID" = generate_id("DerivedModel")) %>%
     xml2::xml_add_child("auc:DerivedModelName", dm_id) %>%
     xml2::xml_add_sibling("auc:MeasuredScenarioID", "IDref" = measured_scenario_id) %>%
     xml2::xml_add_sibling("auc:Models") %>%
-    xml2::xml_add_child("auc:Model") %>%
+    xml2::xml_add_child("auc:Model", ID = generate_id("Model")) %>%
     xml2::xml_add_child("auc:StartTimestamp") %>%
     xml2::xml_add_sibling("auc:EndTimestamp") %>%
     xml2::xml_add_sibling("auc:DerivedModelInputs") %>%
@@ -301,9 +295,13 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
     "Hourly" = "Hour",
     "SLR" = "2 parameter simple linear regression",
     "Three Parameter Heating" = "3 parameter heating change point model",
+    "3PH" = "3 parameter heating change point model",
     "Three Parameter Cooling" = "3 parameter cooling change point model",
+    "3PC" = "3 parameter cooling change point model",
     "Four Parameter Linear Model" = "4 parameter change point model",
-    "Five Parameter Linear Model" = "5 parameter change point model"
+    "4P" = "4 parameter change point model",
+    "Five Parameter Linear Model" = "5 parameter change point model",
+    "5P" = "5 parameter change point model"
   )
 
   # Extract desired concepts from nmecr model
@@ -341,18 +339,76 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   # Based on model type, map parameters to BSync
   # TODO: add additional supported models
   coeffs <- nmecr_baseline_model$model$coefficients
-  if (model_type == "SLR") {
-    bsync_intercept <- coeffs[["(Intercept)"]]
-    bsync_beta1 <- coeffs[["temp"]] # TODO: How do these get named more generally?
-  } else {
-    stop("Unhandled model type")
-  }
+  bsync_intercept <- NULL
+  bsync_beta1 <- NULL
+  bsync_beta2 <- NULL
+  bsync_beta3 <- NULL
+  # TODO: find a better way of cathching cases where we faild to fit the model
+  tryCatch({
+    if (bsync_model_type == "2 parameter simple linear regression") {
+      bsync_intercept <- coeffs[["(Intercept)"]]
+      bsync_beta1 <- coeffs[["temp"]]
+    } else if (bsync_model_type == "3 parameter heating change point model" || bsync_model_type == "3 parameter cooling change point model") {
+      bsync_intercept <- coeffs[["(Intercept)"]]
+      bsync_beta1 <- coeffs[["U1.independent_variable"]]
+      # psi[2] contains the estimated change point
+      bsync_beta2 <- nmecr_baseline_model$model$psi[2]
 
-  dm_coeff %>%
-    xml2::xml_add_child("auc:Guideline14Model") %>%
-    xml2::xml_add_child("auc:ModelType", bsync_model_type) %>%
-    xml2::xml_add_sibling("auc:Intercept", bsync_intercept) %>%
-    xml2::xml_add_sibling("auc:Beta1", bsync_beta1)
+      # for current nmecr implementation, the sign for beta 1 and 2 is flipped for
+      # the heating models, which we account for here
+      if (grepl('heating', bsync_model_type)) {
+        bsync_beta1 <- -1 * bsync_beta1
+        bsync_beta2 <- -1 * bsync_beta2
+      }
+    } else if (bsync_model_type == "4 parameter change point model") {
+      # to get the intercept `C` according to ASHRAE Guideline 14-2014, Figure D-1
+      # we must predict the eload at the estimated temperature change point
+      temp_change_point <- nmecr_baseline_model$model$psi[2]
+      predictions <- calculate_model_predictions(
+        training_data=nmecr_baseline_model$training_data,
+        prediction_data=as.data.frame(list(time=c(2019-01-01), temp=c(temp_change_point))),
+        modeled_object=nmecr_baseline_model
+      )
+      bsync_intercept <- predictions$predictions[1]
+      bsync_beta1 <- coeffs[["independent_variable"]]
+
+      # TODO: verify this is _always_ the wrong sign
+      # flip the sign b/c current nmecr implementation has it incorrectly set
+      bsync_beta2 <- -1 * coeffs[["U1.independent_variable"]]
+
+      bsync_beta3 <- temp_change_point
+    } else {
+      stop("Unhandled model type")
+    }
+  }, error = function(e) {
+    print(e)
+    # if we get a subscript out of bounds error, assume it's b/c we failed
+    # to fit the model and as a result we would be missing values inside of our result
+    if (e$message == "subscript out of bounds") {
+      stop('Failed to parse model for BuildingSync. This is most likely because the model failed to fit')
+    }
+    stop(e$message)
+  })
+
+  dm_params <- dm_coeff %>% xml2::xml_add_child("auc:Guideline14Model")
+  dm_params %>% xml2::xml_add_child("auc:ModelType", bsync_model_type)
+
+  if (!is.null(bsync_intercept)) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Intercept", bsync_intercept)
+  }
+  if (!is.null(bsync_beta1)) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta1", bsync_beta1)
+  }
+  if (!is.null(bsync_beta2)) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta2", bsync_beta2)
+  }
+  if (!is.null(bsync_beta3)) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta3", bsync_beta3)
+  }
 
   # Evaluate model performance and map to BSync
   perf <- nmecr::calculate_summary_statistics(nmecr_baseline_model)
