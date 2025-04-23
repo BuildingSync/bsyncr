@@ -2,13 +2,13 @@ name: Pre-Commit
 
 on:
   push:
-    
+
 jobs:
   pre-commit:
     name: Run Pre-Commit Checks
     runs-on: ubuntu-latest
 
-    steps:    
+    steps:
       - name: Checkout Code
         uses: actions/checkout@v3
 
