@@ -7,7 +7,7 @@
 # `brew install R`
 
 # Install packages needed (assuming that this is the first time configuring)
-install.packages(c('remotes', 'crayon', 'dplyr', 'crayon', 'tidyr'), repos='http://cran.us.r-project.org')
+install.packages(c('remotes', 'crayon', 'dplyr', 'crayon', 'tidyr', 'crul'), repos='http://cran.us.r-project.org')
 # print out the current working directory
 print("Current working directory:")
 print(getwd())
@@ -50,5 +50,4 @@ test_create_dataframe <- function(bsync_filepath, model_type) {
 # Test that the dataframe is created
 result <- test_create_dataframe("./tests/data/ex_bsync.xml", "SLR")
 print(result)
-
 
