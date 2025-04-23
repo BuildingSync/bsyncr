@@ -15,10 +15,10 @@
               </auc:PremisesIdentifiers>
               <auc:Address>
                 <auc:City>Arvada</auc:City>
-                <auc:State>Colorado</auc:State>
+                <auc:State>CO</auc:State>
                 <auc:PostalCode>80005</auc:PostalCode>
               </auc:Address>
-              <auc:eGRIDRegionCode></auc:eGRIDRegionCode>
+              <auc:eGRIDRegionCode>RMPA</auc:eGRIDRegionCode>
               <auc:Longitude>-105.1340</auc:Longitude>
               <auc:Latitude>39.8446</auc:Latitude>
               <auc:OccupancyClassification>Office</auc:OccupancyClassification>
