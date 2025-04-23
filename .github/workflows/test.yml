@@ -7,6 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      NOAA_TOKEN: ${{ secrets.NOAA_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
