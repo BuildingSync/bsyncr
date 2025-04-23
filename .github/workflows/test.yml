@@ -42,4 +42,6 @@ jobs:
       #     devtools::install_deps(dependencies = TRUE)
 
       - name: Run script
-        run: Rscript tests/test_bsyncr.R
+        run: |
+          Rscript setup_environment.R
+          Rscript -e "testthat::test_dir('tests')"

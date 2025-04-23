@@ -19,6 +19,7 @@
     "NOAA",
     "noaakey",
     "rnoaa",
+    "testthat",
     "tidyr"
   ],
   "ignoreWords": [],
