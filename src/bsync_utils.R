@@ -225,7 +225,7 @@ bs_parse_nmecr_df <- function(tree, insert_weather_data=FALSE) {
     row_units <- closest_row$units
     if (row_units == "celsius") {
       row_temp <- (closest_row$value * 9 / 5) + 32
-    } else if (row_units == "farenheit") {
+    } else if (row_units == "fahrenheit") {
       row_temp <- closest_row$value
     } else {
       stop(sprintf("Invalid unit type: %s", row_units))
@@ -343,7 +343,7 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   bsync_beta1 <- NULL
   bsync_beta2 <- NULL
   bsync_beta3 <- NULL
-  # TODO: find a better way of cathching cases where we faild to fit the model
+  # TODO: find a better way of catching cases where we failed to fit the model
   tryCatch({
     if (bsync_model_type == "2 parameter simple linear regression") {
       bsync_intercept <- coeffs[["(Intercept)"]]

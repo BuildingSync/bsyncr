@@ -4,7 +4,18 @@
   "dictionaryDefinitions": [],
   "dictionaries": [],
   "words": [
-    "balancepoint"
+    "Arvada",
+    "balancepoint",
+    "crul",
+    "dataframe",
+    "datatypeid",
+    "dplyr",
+    "Drybulb",
+    "elec",
+    "nmecr",
+    "NOAA",
+    "noaakey",
+    "tidyr"
   ],
   "ignoreWords": [],
   "import": []
