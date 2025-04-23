@@ -1,7 +1,5 @@
-.Rproj.user
-.Rhistory
-.RData
-.Ruserdata
 .DS_Store
-inst/doc
-*.html
+
+vignettes/*.html
+vignettes/*.R
+vignettes/output

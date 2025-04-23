@@ -2,7 +2,7 @@ Package: bsyncr
 Type: Package
 Title: What the Package Does (Title Case)
 Version: 0.1.0
-Author: Cory Mosiman
+Author: Cory Mosiman, Nicholas Long
 Maintainer: Not Maintained <not@abc.com>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
