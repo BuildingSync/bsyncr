@@ -34,7 +34,7 @@ if (NOAA_TOKEN == "") {
 }
 options(noaakey=NOAA_TOKEN)
 
-test_create_dataframe <- function(bsync_filepath, model_type) {
+test_create_dataframe <- function(bsync_filepath) {
   baseline_scenario_id <- "Scenario-bsyncr"
   bsync_doc <- xml2::read_xml(bsync_filepath) %>%
     bsyncr::bs_stub_scenarios(linked_building_id = "My-Fav-Building", baseline_id = baseline_scenario_id)
@@ -48,5 +48,5 @@ test_create_dataframe <- function(bsync_filepath, model_type) {
 }
 
 # Test that the dataframe is created
-result <- test_create_dataframe("./tests/data/ex_bsync.xml", "SLR")
+result <- test_create_dataframe("./tests/data/ex_bsync.xml")
 print(result)
