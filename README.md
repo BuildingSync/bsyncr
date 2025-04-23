@@ -25,19 +25,19 @@ library(bsyncr)
 # example on using.
 ```
 
-# TODO
-
-- Stub out `auc:DerivedModels` for both the baseline and reporting scenarios
-- Run NMEC analysis, as shown in nmecr vignette
-  - Serialize the SLR model
-  - Serialize the 5p CPM
-- Add timeseries serialization into utility functions
-
-# Releasing new version
+## Releasing new version
 
 - Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
 - Create CHANGELOG in GitHub
 - Paste in updates and merge release prep PR to develop
 - Test
 - Merge to main
-- Tag on GitHub (TODO: release with GitHub action)
+- Tag on GitHub
+
+## TODO
+
+- Stub out `auc:DerivedModels` for both the baseline and reporting scenarios
+- Run NMEC analysis, as shown in nmecr vignette
+  - Serialize the SLR model
+  - Serialize the 5p change point model
+- Add timeseries serialization into utility functions

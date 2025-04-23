@@ -4,7 +4,7 @@
 # The script will run the analysis and the result should be non zero.
 
 # Ensure that R is installed. A recent version should suffice
-# `brew install R`
+# macos:`brew install R`
 
 # Install packages needed (assuming that this is the first time configuring)
 install.packages(c('remotes', 'crayon', 'dplyr', 'crayon', 'tidyr', 'crul'), repos='http://cran.us.r-project.org')
