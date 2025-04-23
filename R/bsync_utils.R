@@ -257,7 +257,7 @@ bs_parse_nmecr_df <- function(tree, insert_weather_data=FALSE) {
                                   start_date = format(ts_start, format="%m/%d/%y %H:%M"),
                                   end_date = format(ts_end, format="%m/%d/%y %H:%M"),
                                   convert_to_data_interval = data_int,
-                                  temp_balancepoint = 65)) 
+                                  temp_balancepoint = 65))
 }
 
 #' Add inputs, parameters, and performance statistics to a auc:DerivedModel

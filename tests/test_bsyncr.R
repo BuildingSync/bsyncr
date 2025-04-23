@@ -50,4 +50,3 @@ test_create_dataframe <- function(bsync_filepath, model_type) {
 # Test that the dataframe is created
 result <- test_create_dataframe("./tests/data/ex_bsync.xml", "SLR")
 print(result)
-

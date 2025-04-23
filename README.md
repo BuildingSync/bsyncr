@@ -1,6 +1,6 @@
 # bsyncr
 
-A package for generating BuildingSync documents in R.  It is intended to be used in parallel with the [nmecr](https://github.com/kW-Labs/nmecr) package, enabling serialization of NMEC analysis into BuildingSync documents.
+A package for generating BuildingSync documents in R. It is intended to be used in parallel with the [nmecr](https://github.com/kW-Labs/nmecr) package, enabling serialization of NMEC analysis into BuildingSync documents.
 
 ## Using as a package
 
@@ -21,11 +21,12 @@ remotes::install_github('BuildingSync/bsyncr@v0.1.0', upgrade='never')
 # verify that the package loads
 library(bsyncr)
 
-# see the vignette PDF file or the test file for an 
+# see the vignette PDF file or the test file for an
 # example on using.
 ```
 
 # TODO
+
 - Stub out `auc:DerivedModels` for both the baseline and reporting scenarios
 - Run NMEC analysis, as shown in nmecr vignette
   - Serialize the SLR model
@@ -34,9 +35,9 @@ library(bsyncr)
 
 # Releasing new version
 
-* Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
-* Create CHANGELOG in GitHub
-* Paste in updates and merge release prep PR to develop
-* Test
-* Merge to main
-* Tag on GitHub  (TODO: release with GitHub action)
+- Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
+- Create CHANGELOG in GitHub
+- Paste in updates and merge release prep PR to develop
+- Test
+- Merge to main
+- Tag on GitHub (TODO: release with GitHub action)

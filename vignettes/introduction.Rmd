@@ -62,7 +62,7 @@ For both the Baseline and Reporting Scenarios:
 ```{r, results = 'hide'}
 baseline_xpath <- "//auc:Scenario[auc:ScenarioType/auc:CurrentBuilding/auc:CalculationMethod/auc:Measured]"
 reporting_xpath <- "//auc:Scenario[auc:ScenarioType/auc:PackageOfMeasures/auc:CalculationMethod/auc:Measured]"
-  
+
 sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
 not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-Baseline",
                                            dm_period = "Baseline",
@@ -83,13 +83,13 @@ start_dt <- "03/01/2012 00:00"
 end_dt <- "02/28/2013 23:59"
 data_int <- "Daily"
 
-b_df <- nmecr::create_dataframe(eload_data = nmecr::eload, 
-                                temp_data = nmecr::temp, 
-                                start_date = start_dt, 
-                                end_date = end_dt, 
+b_df <- nmecr::create_dataframe(eload_data = nmecr::eload,
+                                temp_data = nmecr::temp,
+                                start_date = start_dt,
+                                end_date = end_dt,
                                 convert_to_data_interval = data_int)
 
-SLR_model <- nmecr::model_with_SLR(b_df, 
+SLR_model <- nmecr::model_with_SLR(b_df,
                                    nmecr::assign_model_inputs(regression_type = "SLR"))
 ```
 
@@ -97,7 +97,7 @@ SLR_model <- nmecr::model_with_SLR(b_df,
 
 ```{r}
 dm_base_xpath <- "//auc:DerivedModel[auc:DerivedModelPeriod = 'Baseline']/auc:DerivedModelInputs"
-dm_baseline <- xml2::xml_find_first(bsync_doc, 
+dm_baseline <- xml2::xml_find_first(bsync_doc,
                                     dm_base_xpath)
 
 not_used <- bs_gen_dm_nmecr(nmecr_baseline_model = SLR_model,

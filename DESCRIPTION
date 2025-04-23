@@ -14,7 +14,7 @@ Imports:
   nmecr (>= 1.0.4),
   anytime
 RoxygenNote: 7.1.0
-Suggests: 
+Suggests:
     knitr,
     rmarkdown
 VignetteBuilder: knitr
