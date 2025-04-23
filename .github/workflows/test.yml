@@ -1,6 +1,7 @@
 name: R-tests
 
-on: push
+on:
+  push:
 
 jobs:
   test:
@@ -35,11 +36,6 @@ jobs:
             libv8-dev \
             libxml2-dev \
             wget
-
-      # - name: Install R dependencies
-      #   run: |
-      #     install.packages('devtools')
-      #     devtools::install_deps(dependencies = TRUE)
 
       - name: Run script
         run: |
