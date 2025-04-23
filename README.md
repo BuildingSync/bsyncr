@@ -4,7 +4,7 @@ A package for generating BuildingSync documents in R. It is intended to be used 
 
 ## Using as a package
 
-Go to [NOAA's website](https://www.ncdc.noaa.gov/cdo-web/token) to request an API key. This is needed to look up weather data. Set an environment variable names `NOAA_TOKEN` with your API key.
+Go to [NOAA's website](https://www.ncdc.noaa.gov/cdo-web/token) to request an API key. This is needed to look up weather data. Set an environment variable named `NOAA_TOKEN` with your API key.
 
 ```bash
 export NOAA_TOKEN=YOUR_KEY_HERE
