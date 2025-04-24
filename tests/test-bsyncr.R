@@ -1,4 +1,7 @@
-# TODO: add license.
+"""
+BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/BuildingSync/bsyncr/blob/main/LICENSE.txt
+"""
 
 # Load required libraries
 library(testthat)

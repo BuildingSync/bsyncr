@@ -1,3 +1,8 @@
+"""
+BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+See also https://github.com/BuildingSync/bsyncr/blob/main/LICENSE.txt
+"""
+
 library('rnoaa');
 library('lubridate');
 
