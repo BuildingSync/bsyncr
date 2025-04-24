@@ -1,3 +1,5 @@
+# TODO: add license. 
+
 # Load required libraries
 library(testthat)
 library(xml2)
@@ -12,7 +14,7 @@ if (NOAA_TOKEN == "") {
 }
 options(noaakey = NOAA_TOKEN)
 
-# Define a helper function for testing
+# Define a helper function for testing -- this should probably be a src file.
 test_create_dataframe <- function(bsync_filepath) {
   baseline_scenario_id <- "Scenario-bsyncr"
   bsync_doc <- xml2::read_xml(bsync_filepath) %>%

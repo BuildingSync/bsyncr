@@ -4,7 +4,8 @@ cat(getwd(), "\n\n")
 
 # Install required packages if not already installed
 required_packages <- c(
-  "remotes", "crayon", "dplyr", "tidyr", "crul", "xml2", "testthat", "rnoaa"
+  "remotes", "crayon", "dplyr", "tidyr", "crul", "xml2", "testthat", "anytime", "lubridate", "segmented", "xts", "zoo"
+  "ggplot2", "scales", "XML", "rappdirs", "gridExtra", "isdparser", "geonames", "hoardr", "data.table"
 )
 
 cat("Checking and installing required packages...\n")
