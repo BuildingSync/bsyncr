@@ -1,3 +1,21 @@
+# BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+# See also https://github.com/BuildingSync/bsyncr/blob/main/LICENSE.txt
+
+library('rnoaa');
+library('lubridate');
+
+# closure for generate_id so we can store static var "count"
+make.f <- function() {
+  count <- 0
+  f <- function(prefix) {
+    count <<- count + 1
+    return(sprintf("bsyncr-%s-%d", prefix, count))
+  }
+  return( f )
+}
+
+generate_id <- make.f()
+
 #' Stub out the root node for an auc:BuildingSync document
 #'
 #' @param raw_schema_location A character string pointing to a raw XSD document to be used in xsi:schemaLocation
@@ -8,7 +26,8 @@ bs_gen_root_doc <- function(raw_schema_location = "https://raw.githubusercontent
   doc <- xml2::xml_new_root("auc:BuildingSync",
                       "xmlns:auc" = "http://buildingsync.net/schemas/bedes-auc/2019",
                       "xsi:schemaLocation" = paste("http://buildingsync.net/schemas/bedes-auc/2019", raw_schema_location),
-                      "xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance")
+                      "xmlns:xsi" = "http://www.w3.org/2001/XMLSchema-instance",
+                      "version" = "dev")
   return(doc)
 }
 
@@ -23,16 +42,13 @@ bs_stub_bldg <- function(doc, bldg_id = "Building-1") {
   doc %>%
     xml2::xml_root() %>%
     xml2::xml_add_child("auc:Facilities") %>%
-    xml2::xml_add_child("auc:Facility") %>%
+    xml2::xml_add_child("auc:Facility", "ID" = generate_id("Facility")) %>%
     xml2::xml_add_child("auc:Sites") %>%
-    xml2::xml_add_child("auc:Site") %>%
+    xml2::xml_add_child("auc:Site", "ID" = generate_id("Site")) %>%
     xml2::xml_add_child("auc:Buildings") %>%
-    xml2::xml_add_child("auc:Building") %>%
+    xml2::xml_add_child("auc:Building", "ID" = bldg_id) %>%
     xml2::xml_add_child("auc:PremisesName", bldg_id) %>%
     xml2::xml_root()
-
-  xml2::xml_find_first(doc, "//auc:Building") %>%
-    xml2::xml_set_attr("ID", bldg_id)
 
   return(doc)
 }
@@ -49,31 +65,12 @@ bs_stub_scenarios <- function(doc,
                                  baseline_id = "Scenario-Baseline",
                                  reporting_id = "Scenario-Reporting",
                                  linked_building_id = "Building-1") {
-  xml2::xml_find_first(doc, "//auc:Sites") %>%
-    xml2::xml_add_sibling("auc:Reports", .where="after") %>%
-    xml2::xml_add_child("auc:Report") %>%
+  xml2::xml_find_first(doc, "//auc:Reports") %>%
+    xml2::xml_add_child("auc:Report", "ID" = generate_id("Report")) %>%
     xml2::xml_add_child("auc:Scenarios") %>%
-    xml2::xml_add_child("auc:Scenario") %>%
-    xml2::xml_add_sibling("auc:Scenario") %>%
-    xml2::xml_root()
-
-  scenarios <- xml2::xml_find_all(doc, "//auc:Scenario")
-
-  # First scenario considered will be the baseline scenario
-  scenarios[[1]] %>%
-    xml2::xml_set_attr("ID", baseline_id)
-
-  scenarios[[1]] %>%
-    bs_add_scenario_type(sc_type="Current Building", measured = TRUE) %>%
-    bs_link_bldg(linked_building_id)
-
-  # Second scenario will be the reporting scenario
-  scenarios[[2]] %>%
-    xml2::xml_set_attr("ID", reporting_id)
-
-  scenarios[[2]] %>%
-    bs_add_scenario_type(sc_type="Package of Measures", measured = TRUE) %>%
-    bs_link_bldg(linked_building_id)
+    xml2::xml_add_child("auc:Scenario", "ID" = baseline_id) %>%
+    xml2::xml_add_child("auc:ScenarioType") %>%
+    xml2::xml_add_child("auc:DerivedModel", "ID" = generate_id("DerivedModel"))
 
   return(doc)
 }
@@ -97,7 +94,7 @@ bs_add_scenario_type <- function(x,
       xml2::xml_add_child("auc:CurrentBuilding")
   } else if (sc_type == "Package of Measures") {
     x3 <- x2 %>%
-      xml2::xml_add_child("auc:PackageOfMeasures")
+      xml2::xml_add_child("auc:PackageOfMeasures", "ID" = generate_id("POM"))
   }
 
   x4 <- x3 %>%
@@ -135,7 +132,6 @@ bs_link_bldg <- function(x, linked_building_id) {
 #' @param x An xml_node for an auc:Scenario
 #' @param dm_id The desired ID for the new derived model to be added
 #' @param dm_period A character string to define the model period: "Baseline", "Reporting"
-#' @param sc_type A character string indicating the 'type' of the scenario: "Current Building", "Package of Measures"
 
 #'
 #' @return x An xml_node for the same auc:Scenario, with the addition of the derived model
@@ -143,25 +139,128 @@ bs_link_bldg <- function(x, linked_building_id) {
 bs_stub_derived_model <- function(x,
                                dm_id,
                                dm_period = c("Baseline", "Reporting"),
-                               sc_type = c("Current Building", "Package of Measures")) {
-  if (sc_type == "Current Building") {
-    x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:CurrentBuilding")
-  } else if (sc_type == "Package of Measures") {
-    x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:PackageOfMeasures")
-  }
+                               measured_scenario_id = "Scenario-Measured") {
+  x2 <- x %>% xml2::xml_find_first("auc:ScenarioType/auc:DerivedModel")
+
   x2 %>%
-    xml2::xml_add_child("auc:DerivedModels") %>%
-    xml2::xml_add_child("auc:DerivedModel") %>%
     xml2::xml_add_child("auc:DerivedModelName", dm_id) %>%
-    xml2::xml_add_sibling("auc:DerivedModelPeriod", dm_period) %>%
+    xml2::xml_add_sibling("auc:MeasuredScenarioID", "IDref" = measured_scenario_id) %>%
+    xml2::xml_add_sibling("auc:Models") %>%
+    xml2::xml_add_child("auc:Model", ID = generate_id("Model")) %>%
+    xml2::xml_add_child("auc:StartTimestamp") %>%
+    xml2::xml_add_sibling("auc:EndTimestamp") %>%
     xml2::xml_add_sibling("auc:DerivedModelInputs") %>%
-    xml2::xml_add_sibling("auc:DerivedModelParameters") %>%
-    xml2::xml_add_sibling("auc:DerivedModelPerformance") %>%
-    xml2::xml_add_sibling("auc:DerivedModelOutputs") %>%
-    xml2::xml_parent() %>%
-    xml2::xml_set_attr("ID", dm_id)
+    xml2::xml_add_sibling("auc:DerivedModelCoefficients") %>%
+    xml2::xml_add_sibling("auc:DerivedModelPerformance")
 
   return(x)
+}
+
+#' Generate a data frame usable by nmecr for modeling
+#'
+#' @param tree XML tree to parse
+
+#'
+#' @return x Data frame for use with nmecr's model_with_* functions
+#' @export
+bs_parse_nmecr_df <- function(tree, insert_weather_data=FALSE) {
+  lat_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Latitude"))
+  lng_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Longitude"))
+  lat_dbl <- as.double(lat_str)
+  lng_dbl <- as.double(lng_str)
+  resource_use_id_str <- xml2::xml_attr(xml2::xml_find_first(tree, "//auc:ResourceUses/auc:ResourceUse[auc:EnergyResource = 'Electricity']"), "ID")
+
+  ts_nodes = xml2::xml_find_all(tree, sprintf("//auc:TimeSeries[auc:ResourceUseID/@IDref = '%s']", resource_use_id_str))
+
+  # construct the eload dataframe
+  n_samples = length(ts_nodes)
+  ts_matrix <- matrix(ncol=2, nrow=n_samples)
+  for(i in 1:n_samples){
+    ts_node <- ts_nodes[i]
+    start_timestamp <- xml2::xml_text(xml2::xml_find_first(ts_node, "auc:StartTimestamp"))
+    reading <- xml2::xml_text(xml2::xml_find_first(ts_node, "auc:IntervalReading"))
+    ts_matrix[i,] <- c(start_timestamp, reading)
+  }
+  ts_df <- data.frame(ts_matrix)
+  colnames(ts_df) <- c("time", "eload")
+
+  # fix data types
+  ts_df[, "eload"] <- as.double(ts_df[, "eload"])
+  ts_df[, "time"] <- as.POSIXct(ts_df[, "time"])
+
+  ts_start = min(ts_df$time)
+  ts_end = max(ts_df$time)
+
+  # handle weather
+  station_data <- rnoaa::ghcnd_stations() # Takes a while to run
+  lat_lon_df <- data.frame(id = c("my_building"),
+                           latitude = c(lat_dbl),
+                           longitude = c(lng_dbl))
+
+  # get nearest station with average temp data
+  nearby_stations <- rnoaa::meteo_nearby_stations(
+    lat_lon_df = lat_lon_df,
+    station_data = station_data,
+    limit=1,
+    var=c("TAVG")
+  )
+
+  # get MONTHLY temp data from station
+  weather_result <- rnoaa::ncdc(
+    datasetid='GSOM',
+    stationid=sprintf('GHCND:%s', nearby_stations$my_building$id),
+    datatypeid='TAVG',
+    # messy solution, but ensures that we get data before our start time
+    startdate =  strftime(ts_start - (60 * 60 * 24 * 31) , "%Y-%m-%dT%H:%M:%S"),
+    enddate = ts_end,
+    add_units=TRUE,
+  )
+
+  weather_data <- weather_result$data
+  temp_matrix <- matrix(ncol=2, nrow=n_samples)
+  for (row in 1:n_samples) {
+    # find the weather row with a date closest to our current eload time
+    # this is not the correct way to do this, but good enough for now
+    # it would seem the nmecr package should do this for us, but it didn't sometimes...
+    date_diffs <- abs(as.POSIXct(weather_data$date) - ts_df[[row, "time"]])
+    closest_row <- weather_data[which.min(date_diffs),]
+    row_date <- ts_df[[row, "time"]]
+    row_units <- closest_row$units
+    if (row_units == "celsius") {
+      row_temp <- (closest_row$value * 9 / 5) + 32
+    } else if (row_units == "fahrenheit") {
+      row_temp <- closest_row$value
+    } else {
+      stop(sprintf("Invalid unit type: %s", row_units))
+    }
+    temp_matrix[row,] <- c(row_date, row_temp)
+  }
+  temp_df <- data.frame(temp_matrix)
+  colnames(temp_df) <- c("time", "temp")
+
+  # fix data types
+  temp_df[, "temp"] <- as.double(temp_df[, "temp"])
+  temp_df[, "time"] <- as.POSIXct.numeric(temp_df[, "time"], origin=lubridate::origin)
+
+  if (insert_weather_data == TRUE) {
+    ts_data_elem <- xml2::xml_find_first(tree, '//auc:Scenario[auc:ResourceUses/auc:ResourceUse/auc:EnergyResource/text() = "Electricity"]/auc:TimeSeriesData')
+    for (row in 1:n_samples) {
+      ts_data_elem %>%
+        xml2::xml_add_child("auc:TimeSeries", "ID" = generate_id("TimeSeries")) %>%
+          xml2::xml_add_child("auc:TimeSeriesReadingQuantity", "Dry Bulb Temperature") %>%
+          xml2::xml_add_sibling("auc:StartTimestamp", strftime(temp_df[[row, "time"]] , "%Y-%m-%dT%H:%M:%S")) %>%
+          xml2::xml_add_sibling("auc:IntervalFrequency", "Month") %>%
+          xml2::xml_add_sibling("auc:IntervalReading", temp_df[[row, "temp"]])
+    }
+  }
+
+  data_int <- "Monthly"
+  return(nmecr::create_dataframe(eload_data = ts_df,
+                                  temp_data = temp_df,
+                                  start_date = format(ts_start, format="%m/%d/%y %H:%M"),
+                                  end_date = format(ts_end, format="%m/%d/%y %H:%M"),
+                                  convert_to_data_interval = data_int,
+                                  temp_balancepoint = 65))
 }
 
 #' Add inputs, parameters, and performance statistics to a auc:DerivedModel
@@ -186,8 +285,10 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
                                  explanatory_variable_units = "Fahrenheit, F") {
 
   # Extract the necessary nodes to manipulate
+  dm_start <- xml2::xml_find_first(x, "//auc:Models/auc:Model/auc:StartTimestamp")
+  dm_end <- xml2::xml_find_first(x, "//auc:Models/auc:Model/auc:EndTimestamp")
   dm_inputs <- xml2::xml_find_first(x, "//auc:DerivedModelInputs")
-  dm_params <- xml2::xml_find_first(x, "//auc:DerivedModelParameters")
+  dm_coeff <- xml2::xml_find_first(x, "//auc:DerivedModelCoefficients")
   dm_perf <- xml2::xml_find_first(x, "//auc:DerivedModelPerformance")
 
   # Create a named list (like key-value hash) for mapping nmecr concepts to BSync
@@ -197,9 +298,13 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
     "Hourly" = "Hour",
     "SLR" = "2 parameter simple linear regression",
     "Three Parameter Heating" = "3 parameter heating change point model",
+    "3PH" = "3 parameter heating change point model",
     "Three Parameter Cooling" = "3 parameter cooling change point model",
+    "3PC" = "3 parameter cooling change point model",
     "Four Parameter Linear Model" = "4 parameter change point model",
-    "Five Parameter Linear Model" = "5 parameter change point model"
+    "4P" = "4 parameter change point model",
+    "Five Parameter Linear Model" = "5 parameter change point model",
+    "5P" = "5 parameter change point model"
   )
 
   # Extract desired concepts from nmecr model
@@ -214,17 +319,21 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   bsync_start_dt <- format(anytime::anytime(model_start_dt), "%Y-%m-%dT%H:%M:%S")
   bsync_end_dt <- format(anytime::anytime(model_end_dt), "%Y-%m-%dT%H:%M:%S")
 
+  # add model data
+  dm_start %>%
+    xml2::xml_set_text(bsync_start_dt)
+  dm_end %>%
+    xml2::xml_set_text(bsync_end_dt)
+
   # Add inputs data
-  dm_inputs %>% xml2::xml_add_child("auc:ModelType", bsync_model_type) %>%
-    xml2::xml_add_sibling("auc:NormalizationMethod", normalization_method) %>%
-    xml2::xml_add_sibling("auc:BaselinePeriodStartTimestamp", bsync_start_dt) %>%
-    xml2::xml_add_sibling("auc:BaselinePeriodEndTimestamp", bsync_end_dt) %>%
-    xml2::xml_add_sibling("auc:IntervalFrequency", bsync_interval) %>%
+  dm_inputs %>%
+    xml2::xml_add_child("auc:IntervalFrequency", bsync_interval) %>%
     xml2::xml_add_sibling("auc:ResponseVariable") %>%
     xml2::xml_add_child("auc:ResponseVariableName", response_variable) %>%
     xml2::xml_add_sibling("auc:ResponseVariableUnits", response_variable_units) %>%
-    xml2::xml_add_sibling("auc:ResponseVariableEndUse", response_variable_end_use) %>%
-    xml2::xml_parent() %>% xml2::xml_parent() %>%
+    xml2::xml_add_sibling("auc:ResponseVariableEndUse", response_variable_end_use)
+
+  dm_inputs %>%
     xml2::xml_add_child("auc:ExplanatoryVariables") %>%
     xml2::xml_add_child("auc:ExplanatoryVariable") %>%
     xml2::xml_add_child("auc:ExplanatoryVariableName", explanatory_variable_name) %>%
@@ -233,12 +342,75 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   # Based on model type, map parameters to BSync
   # TODO: add additional supported models
   coeffs <- nmecr_baseline_model$model$coefficients
-  if (model_type == "SLR") {
-    bsync_intercept <- coeffs[["(Intercept)"]]
-    bsync_beta1 <- coeffs[["temp"]] # TODO: How do these get named more generally?
+  bsync_intercept <- NULL
+  bsync_beta1 <- NULL
+  bsync_beta2 <- NULL
+  bsync_beta3 <- NULL
+  # TODO: find a better way of catching cases where we failed to fit the model
+  tryCatch({
+    if (bsync_model_type == "2 parameter simple linear regression") {
+      bsync_intercept <- coeffs[["(Intercept)"]]
+      bsync_beta1 <- coeffs[["temp"]]
+    } else if (bsync_model_type == "3 parameter heating change point model" || bsync_model_type == "3 parameter cooling change point model") {
+      bsync_intercept <- coeffs[["(Intercept)"]]
+      bsync_beta1 <- coeffs[["U1.independent_variable"]]
+      # psi[2] contains the estimated change point
+      bsync_beta2 <- nmecr_baseline_model$model$psi[2]
+
+      # for current nmecr implementation, the sign for beta 1 and 2 is flipped for
+      # the heating models, which we account for here
+      if (grepl('heating', bsync_model_type)) {
+        bsync_beta1 <- -1 * bsync_beta1
+        bsync_beta2 <- -1 * bsync_beta2
+      }
+    } else if (bsync_model_type == "4 parameter change point model") {
+      # to get the intercept `C` according to ASHRAE Guideline 14-2014, Figure D-1
+      # we must predict the eload at the estimated temperature change point
+      temp_change_point <- nmecr_baseline_model$model$psi[2]
+      predictions <- calculate_model_predictions(
+        training_data=nmecr_baseline_model$training_data,
+        prediction_data=as.data.frame(list(time=c(2019-01-01), temp=c(temp_change_point))),
+        modeled_object=nmecr_baseline_model
+      )
+      bsync_intercept <- predictions$predictions[1]
+      bsync_beta1 <- coeffs[["independent_variable"]]
+
+      # TODO: verify this is _always_ the wrong sign
+      # flip the sign b/c current nmecr implementation has it incorrectly set
+      bsync_beta2 <- -1 * coeffs[["U1.independent_variable"]]
+
+      bsync_beta3 <- temp_change_point
+    } else {
+      stop("Unhandled model type")
+    }
+  }, error = function(e) {
+    print(e)
+    # if we get a subscript out of bounds error, assume it's b/c we failed
+    # to fit the model and as a result we would be missing values inside of our result
+    if (e$message == "subscript out of bounds") {
+      stop('Failed to parse model for BuildingSync. This is most likely because the model failed to fit')
+    }
+    stop(e$message)
+  })
+
+  dm_params <- dm_coeff %>% xml2::xml_add_child("auc:Guideline14Model")
+  dm_params %>% xml2::xml_add_child("auc:ModelType", bsync_model_type)
+
+  if (!is.null(bsync_intercept)) {
     dm_params %>%
-      xml2::xml_add_child("auc:Intercept", bsync_intercept) %>%
-      xml2::xml_add_sibling("auc:Beta1", bsync_beta1)
+      xml2::xml_add_child("auc:Intercept", bsync_intercept)
+  }
+  if (!is.null(bsync_beta1)) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta1", bsync_beta1)
+  }
+  if (!is.null(bsync_beta2)) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta2", bsync_beta2)
+  }
+  if (!is.null(bsync_beta3)) {
+    dm_params %>%
+      xml2::xml_add_child("auc:Beta3", bsync_beta3)
   }
 
   # Evaluate model performance and map to BSync
@@ -246,8 +418,8 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   dm_perf %>%
     xml2::xml_add_child("auc:RSquared", format(perf[["R_squared"]], scientific = FALSE)) %>%
     xml2::xml_add_sibling("auc:CVRMSE", format(max(perf[["CVRMSE %"]], 0), scientific = FALSE)) %>%
-    xml2::xml_add_sibling("auc:NDBE", format(max(perf[["NDBE %"]], 0), scientific = FALSE)) %>%
-    xml2::xml_add_sibling("auc:NMBE", format(max(perf[["NMBE %"]], 0), scientific = FALSE))
+    xml2::xml_add_sibling("auc:NDBE", format(round(max(as.numeric(perf[["NDBE %"]]), 0), 2), scientific = FALSE, nsmall=2)) %>%
+    xml2::xml_add_sibling("auc:NMBE", format(round(max(as.numeric(perf[["NMBE %"]]), 0), 2), scientific = FALSE, nsmall=2))
 
   return(x)
 }
