@@ -5,7 +5,7 @@
 \title{Stub out the root node for an auc:BuildingSync document}
 \usage{
 bs_gen_root_doc(
- 
+
     raw_schema_location = "https://raw.githubusercontent.com/BuildingSync/schema/c620c7e58688698901edcb8560cd3e1b4b34d971/BuildingSync.xsd"
 )
 }

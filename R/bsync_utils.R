@@ -1,3 +1,6 @@
+# BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+# See also https://github.com/BuildingSync/bsyncr/blob/main/LICENSE.txt
+
 library('rnoaa');
 library('lubridate');
 
@@ -225,7 +228,7 @@ bs_parse_nmecr_df <- function(tree, insert_weather_data=FALSE) {
     row_units <- closest_row$units
     if (row_units == "celsius") {
       row_temp <- (closest_row$value * 9 / 5) + 32
-    } else if (row_units == "farenheit") {
+    } else if (row_units == "fahrenheit") {
       row_temp <- closest_row$value
     } else {
       stop(sprintf("Invalid unit type: %s", row_units))
@@ -257,7 +260,7 @@ bs_parse_nmecr_df <- function(tree, insert_weather_data=FALSE) {
                                   start_date = format(ts_start, format="%m/%d/%y %H:%M"),
                                   end_date = format(ts_end, format="%m/%d/%y %H:%M"),
                                   convert_to_data_interval = data_int,
-                                  timestamps="start"))
+                                  temp_balancepoint = 65))
 }
 
 #' Add inputs, parameters, and performance statistics to a auc:DerivedModel
@@ -343,7 +346,7 @@ bs_gen_dm_nmecr <- function(nmecr_baseline_model, x,
   bsync_beta1 <- NULL
   bsync_beta2 <- NULL
   bsync_beta3 <- NULL
-  # TODO: find a better way of cathching cases where we faild to fit the model
+  # TODO: find a better way of catching cases where we failed to fit the model
   tryCatch({
     if (bsync_model_type == "2 parameter simple linear regression") {
       bsync_intercept <- coeffs[["(Intercept)"]]
