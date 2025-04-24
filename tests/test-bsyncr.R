@@ -1,4 +1,4 @@
-# TODO: add license. 
+# TODO: add license.
 
 # Load required libraries
 library(testthat)
