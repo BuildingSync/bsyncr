@@ -27,14 +27,16 @@ library(bsyncr)
 
 ## Releasing new version
 
+- Create a branch with the prepared release change log.
 - Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
 - Make sure the DESCRIPTION has the correct version of the dependencies
 - For testing purposes, make sure the versions of NMECR and RNOAA are correct in the `setup_environment.R` script
-- Create CHANGELOG in GitHub
-- Paste in updates and merge release prep PR to develop
+- Create CHANGELOG in GitHub, paste in updates into CHANGELOG.md
+- Merge release prep PR to develop
 - Test
-- Merge to main
-- Tag on GitHub
+- To release, from the command line merge latest develop into latest main: :code:`git merge --ff-only origin develop`. This will point the HEAD of main to latest develop. Then push the main branch to GitHub with :code:`git push`, which may require a developer with elevated privileges to push to main.
+- Back on GitHub create a new tag in GitHub against main and copy the change log notes into the tag description.
+- Tag on GitHub, copy over the correct version (format v0.1.0) and CHANGELOG content.
 
 ## TODO
 
