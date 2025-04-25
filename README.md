@@ -31,7 +31,7 @@ library(bsyncr)
 - Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
 - Make sure the DESCRIPTION has the correct version of the dependencies
 - For testing purposes, make sure the versions of NMECR and RNOAA are correct in the `setup_environment.R` script
-- Create CHANGELOG in GitHub, paste in updates and
+- Create CHANGELOG in GitHub, paste in updates into CHANGELOG.md
 - Merge release prep PR to develop
 - Test
 - To release, from the command line merge latest develop into latest main: :code:`git merge --ff-only origin develop`. This will point the HEAD of main to latest develop. Then push the main branch to GitHub with :code:`git push`, which may require a developer with elevated privileges to push to main.
