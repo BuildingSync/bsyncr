@@ -1,6 +1,5 @@
 # BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
-# See also https://github.com/BuildingSync/bsyncr-server/blob/main/LICENSE.txt
-
+# See also https://github.com/BuildingSync/bsyncr/blob/main/LICENSE.txt
 
 # Load required libraries
 library(testthat)
