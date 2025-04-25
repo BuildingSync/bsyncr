@@ -1,7 +1,5 @@
-"""
-BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
-See also https://github.com/BuildingSync/bsyncr/blob/main/LICENSE.txt
-"""
+# BuildingSync®, Copyright (c) Alliance for Sustainable Energy, LLC, and other contributors.
+# See also https://github.com/BuildingSync/bsyncr-server/blob/main/LICENSE.txt
 
 # Print the current working directory
 cat("Current working directory:\n")
@@ -9,8 +7,7 @@ cat(getwd(), "\n\n")
 
 # Install required packages if not already installed
 required_packages <- c(
-  "remotes", "crayon", "dplyr", "tidyr", "crul", "xml2", "testthat", "anytime", "lubridate", "segmented", "xts", "zoo",
-  "ggplot2", "scales", "XML", "rappdirs", "gridExtra", "isdparser", "geonames", "hoardr", "data.table"
+  "remotes", "crayon", "dplyr", "tidyr", "crul", "xml2", "testthat", "anytime", "lubridate", "segmented", "xts", "zoo", "ggplot2", "scales", "XML", "rappdirs", "gridExtra", "isdparser", "geonames", "hoardr", "data.table"
 )
 
 cat("Checking and installing required packages...\n")

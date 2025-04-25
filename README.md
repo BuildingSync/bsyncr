@@ -28,6 +28,8 @@ library(bsyncr)
 ## Releasing new version
 
 - Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
+- Make sure the DESCRIPTION has the correct version of the dependencies
+- For testing purposes, make sure the versions of NMECR and RNOAA are correct in the `setup_environment.R` script
 - Create CHANGELOG in GitHub
 - Paste in updates and merge release prep PR to develop
 - Test
