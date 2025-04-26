@@ -1,6 +1,9 @@
+# Version 0.2
+
+- Upgrade to latest version of NMECR (Version 1.0.17)
+- Upgrade to RNOAA 1.4.0
+- Add integration and unit test
+
 # Version 0.1
 
-- initial release. This is currently only released to GitHub.
-- Upgrade to latest version of NMECR (Version 1.0.17)
-- Add integration and unit test
-- Move source code out of R directory and into src directory
+Initial release of the bsyncr package from 2021, which was not previously tagged on GitHub.

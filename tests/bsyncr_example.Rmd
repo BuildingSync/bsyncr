@@ -65,7 +65,7 @@ b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
 model <- nmecr::model_with_SLR(b_df, nmecr::assign_model_inputs(regression_type = "SLR"))
 
 model_df <- model$training_data %>%
-    tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
+  tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
 
 print(model_df)
 
@@ -84,5 +84,4 @@ ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
   theme_minimal() +
   theme(legend.position = "bottom") +
   theme(legend.title = element_blank())
-
 ```
