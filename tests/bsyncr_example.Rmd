@@ -51,6 +51,7 @@ bsync_doc <- xml2::read_xml(bsync_filepath) %>%
 
 baseline_xpath <- sprintf("//auc:Scenario[@ID = '%s']", baseline_scenario_id)
 sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
+
 not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(
   dm_id = "DerivedModel-bsyncr",
   dm_period = "Baseline"
@@ -64,7 +65,7 @@ b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
 model <- nmecr::model_with_SLR(b_df, nmecr::assign_model_inputs(regression_type = "SLR"))
 
 model_df <- model$training_data %>%
-  tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
+    tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
 
 print(model_df)
 
@@ -83,4 +84,5 @@ ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
   theme_minimal() +
   theme(legend.position = "bottom") +
   theme(legend.title = element_blank())
+
 ```
