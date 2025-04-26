@@ -9,7 +9,7 @@ library(crayon)
 library(bsyncr)
 
 # Ensure NOAA token is set
-NOAA_TOKEN <- Sys.getenv('NOAA_TOKEN')
+NOAA_TOKEN <- Sys.getenv("NOAA_TOKEN")
 if (NOAA_TOKEN == "") {
   stop("Missing NOAA token env var: NOAA_TOKEN")
 }
@@ -23,8 +23,10 @@ test_create_dataframe <- function(bsync_filepath) {
 
   baseline_xpath <- sprintf("//auc:Scenario[@ID = '%s']", baseline_scenario_id)
   sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
-  not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-bsyncr",
-                                                            dm_period = "Baseline")
+  not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(
+    dm_id = "DerivedModel-bsyncr",
+    dm_period = "Baseline"
+  )
 
   b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
   return(b_df)
