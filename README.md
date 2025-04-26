@@ -36,6 +36,14 @@ Rscript -e "testthat::test_dir('tests')"
 
 ## Releasing new version
 
+- Open `bysync.Rproj` in RStudio
+- In RStudio, format all the R files by running the following commands in RStudio
+
+```R
+install.packages("styler")
+styler::style_dir()
+```
+
 - Create a branch with the prepared release change log.
 - Make sure the rnoaa and nmecr versions in `setup_environment.R` and ` are correct.
 - Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
