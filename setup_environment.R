@@ -20,7 +20,7 @@ for (pkg in required_packages) {
 
 # Install specific versions of GitHub packages
 cat("Installing GitHub packages...\n")
-remotes::install_github("ropensci/rnoaa@v1.3.4", upgrade = "never")
+remotes::install_github("ropensci/rnoaa@v1.4.0", upgrade = "never")
 remotes::install_github("kW-Labs/nmecr@v1.0.17", upgrade = "never")
 
 # Populate NOAA stations (required for rnoaa)

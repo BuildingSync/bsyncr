@@ -25,9 +25,19 @@ library(bsyncr)
 # example on using.
 ```
 
+## Testing
+
+Tests are automatically run on GitHub. To run locally, make sure to have R installed along with various dev packages.
+
+```bash
+Rscript setup_environment.R
+Rscript -e "testthat::test_dir('tests')"
+```
+
 ## Releasing new version
 
 - Create a branch with the prepared release change log.
+- Make sure the rnoaa and nmecr versions in `setup_environment.R` and ` are correct.
 - Update version in bsync.RProj and DESCRIPTION to the next correct semantic version
 - Make sure the DESCRIPTION has the correct version of the dependencies
 - For testing purposes, make sure the versions of NMECR and RNOAA are correct in the `setup_environment.R` script
