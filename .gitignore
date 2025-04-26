@@ -1,8 +1,16 @@
 .DS_Store
 .python-version
+.Renviron
+.Rhistory
+.RData
 
 node_modules
+
+tests/*.zip
+tests/*.nb.html
+tests/*_results/
 
 vignettes/*.html
 vignettes/*.R
 vignettes/output
+.Rproj.user

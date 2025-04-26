@@ -1,0 +1,85 @@
+---
+title: "bsyncr Functionality Demonstration"
+output: html_notebook
+---
+
+Create a .Renviron file in the project folder and set your NOAA_TOKEN
+
+e.g.,
+
+NOAA_TOKEN=xyz123
+
+
+```{r setup, include=FALSE}
+# set the working directory to the project folder, not the location of this file.
+setwd("..")
+
+# install the dependencies
+source("./setup_environment.R")
+
+# Load required libraries
+library(xml2)
+library(rnoaa)
+library(lubridate)
+library(dplyr)
+library(ggplot2)
+
+
+# Source the utility functions
+source("./R/bsync_utils.R")
+
+# get root path
+root_path <- getwd()
+
+# Ensure NOAA token is set
+NOAA_TOKEN <- Sys.getenv('NOAA_TOKEN')
+if (NOAA_TOKEN == "") {
+  stop("Missing NOAA token env var: NOAA_TOKEN")
+}
+options(noaakey = NOAA_TOKEN)
+```
+
+```{r}
+
+# Path to the test file
+# bsync path from root path
+bsync_filepath <- file.path(root_path, "tests", "data", "ex_bsync.xml")
+
+
+baseline_scenario_id <- "Scenario-bsyncr"
+bsync_doc <- xml2::read_xml(bsync_filepath) %>%
+  bsyncr::bs_stub_scenarios(linked_building_id = "My-Fav-Building", baseline_id = baseline_scenario_id)
+
+baseline_xpath <- sprintf("//auc:Scenario[@ID = '%s']", baseline_scenario_id)
+sc_baseline <- xml2::xml_find_first(bsync_doc, baseline_xpath)
+not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(dm_id = "DerivedModel-bsyncr",
+                                                          dm_period = "Baseline")
+
+b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
+```
+
+```{r}
+# Create an SLR model
+model <- nmecr::model_with_SLR(b_df, nmecr::assign_model_inputs(regression_type = "SLR"))
+
+model_df <- model$training_data %>%
+    tidyr::gather(key = "variable", value = "value", c("eload", "model_fit"))
+
+print(model_df)
+
+# add in the linear regression line from the model results, need to
+# confirm, but it looks like model is in BTU and °C
+intercept = model$model$coefficients[["(Intercept)"]] / 3.41214  # btu to kwh
+# Model is in °C, so convert to F.
+slope = model$model$coefficients[["temp"]] * 9/5  # °C to °F
+
+ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
+    geom_point(aes(color = variable), data=model_df[model_df$variable == "eload",]) +
+    geom_line(aes(color = variable), data=model_df[model_df$variable == "model_fit",]) +
+    geom_abline(intercept = intercept, slope = slope, color = "red", linetype = "dashed") +
+    xlab("Temperature") +
+    scale_y_continuous(name = "Energy Data & Model Fit (kWh)", labels = scales::comma) +
+    theme_minimal() +
+    theme(legend.position = "bottom") +
+    theme(legend.title = element_blank())
+```
