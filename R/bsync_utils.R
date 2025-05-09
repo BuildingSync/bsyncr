@@ -3,6 +3,10 @@
 
 library("rnoaa")
 library("lubridate")
+
+# source file in same directory for weather_data class
+# source("weather_data_fetcher.R")
+
 # closure for generate_id so we can store static var "count"
 make.f <- function() {
   count <- 0
@@ -159,11 +163,12 @@ bs_stub_derived_model <- function(x,
 #' Generate a data frame usable by nmecr for modeling
 #'
 #' @param tree XML tree to parse
-
+#' @param insert_weather_data Boolean indicating whether to insert weather data into the XML tree
 #'
 #' @return x Data frame for use with nmecr's model_with_* functions
 #' @export
 bs_parse_nmecr_df <- function(tree, insert_weather_data = FALSE) {
+  # Extract latitude and longitude from the XML tree
   lat_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Latitude"))
   lng_str <- xml2::xml_text(xml2::xml_find_first(tree, "//auc:Building/auc:Longitude"))
   lat_dbl <- as.double(lat_str)
@@ -172,7 +177,7 @@ bs_parse_nmecr_df <- function(tree, insert_weather_data = FALSE) {
 
   ts_nodes <- xml2::xml_find_all(tree, sprintf("//auc:TimeSeries[auc:ResourceUseID/@IDref = '%s']", resource_use_id_str))
 
-  # construct the eload dataframe
+  # Construct the eload dataframe
   n_samples <- length(ts_nodes)
   ts_matrix <- matrix(ncol = 2, nrow = n_samples)
   for (i in 1:n_samples) {
@@ -184,46 +189,26 @@ bs_parse_nmecr_df <- function(tree, insert_weather_data = FALSE) {
   ts_df <- data.frame(ts_matrix)
   colnames(ts_df) <- c("time", "eload")
 
-  # fix data types
+  # Fix data types
   ts_df[, "eload"] <- as.double(ts_df[, "eload"])
   ts_df[, "time"] <- as.POSIXct(ts_df[, "time"])
 
   ts_start <- min(ts_df$time)
   ts_end <- max(ts_df$time)
 
-  # handle weather
-  station_data <- rnoaa::ghcnd_stations() # Takes a while to run
-  lat_lon_df <- data.frame(
-    id = c("my_building"),
-    latitude = c(lat_dbl),
-    longitude = c(lng_dbl)
+  # Use the weather_data_fetcher class to get weather data
+  fetcher <- weather_data_fetcher$new(
+    station_id = NULL,
+    ts_start = ts_start,
+    ts_end = ts_end
   )
+  fetcher$get_nearest_station(lat = lat_dbl, long = lng_dbl)
+  weather_data <- fetcher$get_weather_data()
 
-  # get nearest station with average temp data
-  nearby_stations <- rnoaa::meteo_nearby_stations(
-    lat_lon_df = lat_lon_df,
-    station_data = station_data,
-    limit = 1,
-    var = c("TAVG")
-  )
-
-  # get MONTHLY temp data from station
-  weather_result <- rnoaa::ncdc(
-    datasetid = "GSOM",
-    stationid = sprintf("GHCND:%s", nearby_stations$my_building$id),
-    datatypeid = "TAVG",
-    # messy solution, but ensures that we get data before our start time
-    startdate = strftime(ts_start - (60 * 60 * 24 * 31), "%Y-%m-%dT%H:%M:%S"),
-    enddate = ts_end,
-    add_units = TRUE,
-  )
-
-  weather_data <- weather_result$data
+  # Match weather data to time series data
   temp_matrix <- matrix(ncol = 2, nrow = n_samples)
   for (row in 1:n_samples) {
-    # find the weather row with a date closest to our current eload time
-    # this is not the correct way to do this, but good enough for now
-    # it would seem the nmecr package should do this for us, but it didn't sometimes...
+    # Find the weather row with a date closest to our current eload time
     date_diffs <- abs(as.POSIXct(weather_data$date) - ts_df[[row, "time"]])
     closest_row <- weather_data[which.min(date_diffs), ]
     row_date <- ts_df[[row, "time"]]
@@ -240,7 +225,7 @@ bs_parse_nmecr_df <- function(tree, insert_weather_data = FALSE) {
   temp_df <- data.frame(temp_matrix)
   colnames(temp_df) <- c("time", "temp")
 
-  # fix data types
+  # Fix data types
   temp_df[, "temp"] <- as.double(temp_df[, "temp"])
   temp_df[, "time"] <- as.POSIXct.numeric(temp_df[, "time"], origin = lubridate::origin)
 

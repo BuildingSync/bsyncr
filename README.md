@@ -40,7 +40,7 @@ Rscript -e "testthat::test_dir('tests')"
 - In RStudio, format all the R files by running the following commands in RStudio
 
 ```R
-install.packages("styler")
+install.packages("styler", repos = "http://cran.us.r-project.org")
 styler::style_dir()
 ```
 

@@ -45,3 +45,17 @@ test_that("Dataframe is created successfully", {
   expect_true(!is.null(result), "Resulting dataframe should not be NULL")
   expect_gt(nrow(result), 0, "Resulting dataframe should have rows")
 })
+
+
+test_that("Dataframe for file 2 is created successfully", {
+  # Path to the test file
+  bsync_filepath <- "./data/ex_bsync_2.xml"
+
+  # Run the function and check the result
+  result <- test_create_dataframe(bsync_filepath)
+  print(result)
+
+  # Ensure the result is not NULL and has rows
+  expect_true(!is.null(result), "Resulting dataframe should not be NULL")
+  expect_gt(nrow(result), 0, "Resulting dataframe should have rows")
+})
