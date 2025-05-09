@@ -79,7 +79,7 @@ weather_data_fetcher <- R6Class(
         units = self$weather_data$units
       )
 
-      # fix data types
+      # fix data types?
       # temp_df[, "temp"] <- as.double(temp_df[, "temp"])
       # temp_df[, "time"] <- as.POSIXct.numeric(temp_df[, "time"], origin = lubridate::origin)
 
@@ -87,7 +87,3 @@ weather_data_fetcher <- R6Class(
     }
   )
 )
-
-# Example usage:
-# fetcher <- weather_data_fetcher$new(station_id = nearby_stations$my_building$id, ts_start = ts_start, ts_end = ts_end)
-# weather_data <- fetcher$get_weather_data()
