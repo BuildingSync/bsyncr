@@ -42,7 +42,7 @@ options(noaakey = NOAA_TOKEN)
 ```{r}
 # Path to the test file
 # bsync path from root path
-bsync_filepath <- file.path(root_path, "tests", "data", "ex_bsync.xml")
+bsync_filepath <- file.path(root_path, "tests", "data", "ex_bsync_2.xml")
 
 
 baseline_scenario_id <- "Scenario-bsyncr"
@@ -57,7 +57,95 @@ not_used <- sc_baseline %>% bsyncr::bs_stub_derived_model(
   dm_period = "Baseline"
 )
 
-b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
+lat_str <- xml2::xml_text(xml2::xml_find_first(bsync_doc, "//auc:Building/auc:Latitude"))
+lng_str <- xml2::xml_text(xml2::xml_find_first(bsync_doc, "//auc:Building/auc:Longitude"))
+lat_dbl <- as.double(lat_str)
+lng_dbl <- as.double(lng_str)
+resource_use_id_str <- xml2::xml_attr(xml2::xml_find_first(bsync_doc, "//auc:ResourceUses/auc:ResourceUse[auc:EnergyResource = 'Electricity']"), "ID")
+
+ts_nodes <- xml2::xml_find_all(bsync_doc, sprintf("//auc:TimeSeries[auc:ResourceUseID/@IDref = '%s']", resource_use_id_str))
+
+n_samples <- length(ts_nodes)
+ts_matrix <- matrix(ncol = 2, nrow = n_samples)
+for (i in 1:n_samples) {
+  ts_node <- ts_nodes[i]
+  start_timestamp <- xml2::xml_text(xml2::xml_find_first(ts_node, "auc:StartTimestamp"))
+  reading <- xml2::xml_text(xml2::xml_find_first(ts_node, "auc:IntervalReading"))
+  ts_matrix[i, ] <- c(start_timestamp, reading)
+}
+ts_df <- data.frame(ts_matrix)
+colnames(ts_df) <- c("time", "eload")
+
+# fix data types
+ts_df[, "eload"] <- as.double(ts_df[, "eload"])
+ts_df[, "time"] <- as.POSIXct(ts_df[, "time"])
+
+ts_start <- min(ts_df$time)
+ts_end <- max(ts_df$time)
+
+# handle weather
+station_data <- rnoaa::ghcnd_stations() # Takes a while to run
+lat_lon_df <- data.frame(
+  id = c("my_building"),
+  latitude = c(lat_dbl),
+  longitude = c(lng_dbl)
+)
+
+# get nearest station with average temp data
+nearby_stations <- rnoaa::meteo_nearby_stations(
+  lat_lon_df = lat_lon_df,
+  station_data = station_data,
+  limit = 1,
+  var = c("TAVG")
+)
+
+
+
+temp_matrix <- matrix(ncol = 2, nrow = n_samples)
+for (row in 1:n_samples) {
+  # find the weather row with a date closest to our current eload time
+  # this is not the correct way to do this, but good enough for now
+  # it would seem the nmecr package should do this for us, but it didn't sometimes...
+  date_diffs <- abs(as.POSIXct(weather_data$date) - ts_df[[row, "time"]])
+  closest_row <- weather_data[which.min(date_diffs), ]
+  row_date <- ts_df[[row, "time"]]
+  row_units <- closest_row$units
+  if (row_units == "celsius") {
+    row_temp <- (closest_row$value * 9 / 5) + 32
+  } else if (row_units == "fahrenheit") {
+    row_temp <- closest_row$value
+  } else {
+    stop(sprintf("Invalid unit type: %s", row_units))
+  }
+  temp_matrix[row, ] <- c(row_date, row_temp)
+}
+temp_df <- data.frame(temp_matrix)
+colnames(temp_df) <- c("time", "temp")
+
+# fix data types
+temp_df[, "temp"] <- as.double(temp_df[, "temp"])
+temp_df[, "time"] <- as.POSIXct.numeric(temp_df[, "time"], origin = lubridate::origin)
+
+ts_data_elem <- xml2::xml_find_first(bsync_doc, '//auc:Scenario[auc:ResourceUses/auc:ResourceUse/auc:EnergyResource/text() = "Electricity"]/auc:TimeSeriesData')
+for (row in 1:n_samples) {
+  ts_data_elem %>%
+    xml2::xml_add_child("auc:TimeSeries", "ID" = generate_id("TimeSeries")) %>%
+    xml2::xml_add_child("auc:TimeSeriesReadingQuantity", "Dry Bulb Temperature") %>%
+    xml2::xml_add_sibling("auc:StartTimestamp", strftime(temp_df[[row, "time"]], "%Y-%m-%dT%H:%M:%S")) %>%
+    xml2::xml_add_sibling("auc:IntervalFrequency", "Month") %>%
+    xml2::xml_add_sibling("auc:IntervalReading", temp_df[[row, "temp"]])
+}
+
+data_int <- "Monthly"
+new_df <- nmecr::create_dataframe(
+  eload_data = ts_df,
+  temp_data = temp_df,
+  start_date = format(ts_start, format = "%m/%d/%y"),
+  end_date = format(ts_end, format = "%m/%d/%y"),
+  convert_to_data_interval = data_int,
+  temp_balancepoint = 65
+)
+# b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
 ```
 
 ```{r}
