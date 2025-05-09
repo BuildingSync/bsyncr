@@ -34,7 +34,6 @@
                 <auc:TimeSeries ID="TimeSeries-0">
                   <auc:StartTimestamp>2022-06-01T07:00:00+00:00</auc:StartTimestamp>
                   <auc:EndTimestamp>2022-07-01T07:00:00+00:00</auc:EndTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
                   <auc:IntervalReading>33979.9339</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
