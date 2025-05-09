@@ -3,7 +3,9 @@
 
 library("rnoaa")
 library("lubridate")
-source("weather_data_fetcher.R") # Ensure the weather_data_fetcher class is sourced
+
+# source file in same directory for weather_data class
+# source("weather_data_fetcher.R")
 
 # closure for generate_id so we can store static var "count"
 make.f <- function() {

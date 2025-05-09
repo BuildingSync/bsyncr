@@ -33,72 +33,74 @@
               <auc:TimeSeriesData>
                 <auc:TimeSeries ID="TimeSeries-0">
                   <auc:StartTimestamp>2022-06-01T07:00:00+00:00</auc:StartTimestamp>
+                  <auc:EndTimestamp>2022-07-01T07:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalFrequency>Month</auc:IntervalFrequency>
                   <auc:IntervalReading>33979.9339</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-1">
                   <auc:StartTimestamp>2022-07-01T07:00:00+00:00</auc:StartTimestamp>
-                 <auc:IntervalReading>37348.9798</auc:IntervalReading>
+                  <auc:EndTimestamp>2022-08-01T07:00:00+00:00</auc:EndTimestamp>
+                  <auc:IntervalReading>37348.9798</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-2">
                   <auc:StartTimestamp>2022-08-01T07:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:EndTimestamp>2022-09-01T07:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>36235.5125</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-3">
                   <auc:StartTimestamp>2022-09-01T07:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:EndTimestamp>2022-10-01T07:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>26497.2686</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-4">
                   <auc:StartTimestamp>2022-10-01T07:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:EndTimestamp>2022-11-01T07:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>11398.8116</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-5">
                   <auc:StartTimestamp>2022-11-01T07:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:EndTimestamp>2022-12-01T07:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>7873.5536</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-6">
                   <auc:StartTimestamp>2022-12-01T08:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:EndTimestamp>2023-01-01T08:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>6094.658899999999</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-7">
-                  <auc:StartTimestamp>2022-01-01T08:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:StartTimestamp>2023-01-01T08:00:00+00:00</auc:StartTimestamp>
+                  <auc:EndTimestamp>2023-02-01T08:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>3143.8154000000004</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-8">
-                  <auc:StartTimestamp>2022-02-01T08:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:StartTimestamp>2023-02-01T08:00:00+00:00</auc:StartTimestamp>
+                  <auc:EndTimestamp>2023-03-01T08:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>5724.8785</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-9">
-                  <auc:StartTimestamp>2022-03-01T08:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:StartTimestamp>2023-03-01T08:00:00+00:00</auc:StartTimestamp>
+                  <auc:EndTimestamp>2023-04-01T08:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>9382.5127</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-10">
-                  <auc:StartTimestamp>2022-04-01T07:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:StartTimestamp>2023-04-01T07:00:00+00:00</auc:StartTimestamp>
+                  <auc:EndTimestamp>2023-05-01T07:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>11834.166299999999</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>
                 <auc:TimeSeries ID="TimeSeries-11">
-                  <auc:StartTimestamp>2022-05-01T07:00:00+00:00</auc:StartTimestamp>
-                  <auc:IntervalFrequency>Month</auc:IntervalFrequency>
+                  <auc:StartTimestamp>2023-05-01T07:00:00+00:00</auc:StartTimestamp>
+                  <auc:EndTimestamp>2023-06-01T07:00:00+00:00</auc:EndTimestamp>
                   <auc:IntervalReading>23704.444499999998</auc:IntervalReading>
                   <auc:ResourceUseID IDref="Resource-Elec"/>
                 </auc:TimeSeries>

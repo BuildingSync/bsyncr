@@ -26,6 +26,7 @@ library(ggplot2)
 
 
 # Source the utility functions
+source("./R/weather_data_fetcher.R")
 source("./R/bsync_utils.R")
 
 # get root path
@@ -83,23 +84,14 @@ ts_df[, "time"] <- as.POSIXct(ts_df[, "time"])
 ts_start <- min(ts_df$time)
 ts_end <- max(ts_df$time)
 
-# handle weather
-station_data <- rnoaa::ghcnd_stations() # Takes a while to run
-lat_lon_df <- data.frame(
-  id = c("my_building"),
-  latitude = c(lat_dbl),
-  longitude = c(lng_dbl)
+# Use the weather_data_fetcher class to get weather data
+fetcher <- weather_data_fetcher$new(
+  station_id = NULL,
+  ts_start = ts_start,
+  ts_end = ts_end
 )
-
-# get nearest station with average temp data
-nearby_stations <- rnoaa::meteo_nearby_stations(
-  lat_lon_df = lat_lon_df,
-  station_data = station_data,
-  limit = 1,
-  var = c("TAVG")
-)
-
-
+fetcher$get_nearest_station(lat = lat_dbl, long = lng_dbl)
+weather_data <- fetcher$get_weather_data()
 
 temp_matrix <- matrix(ncol = 2, nrow = n_samples)
 for (row in 1:n_samples) {
@@ -145,7 +137,7 @@ new_df <- nmecr::create_dataframe(
   convert_to_data_interval = data_int,
   temp_balancepoint = 65
 )
-# b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
+b_df <- bsyncr::bs_parse_nmecr_df(bsync_doc, insert_weather_data = TRUE)
 ```
 
 ```{r}
@@ -162,7 +154,8 @@ print(model_df)
 intercept <- model$model$coefficients[["(Intercept)"]] / 3.41214 # btu to kwh
 # Model is in °C, so convert to F.
 slope <- model$model$coefficients[["temp"]] * 9 / 5 # °C to °F
-
+print(slope)
+print(intercept)
 ggplot2::ggplot(model_df, aes(x = temp, y = value)) +
   geom_point(aes(color = variable), data = model_df[model_df$variable == "eload", ]) +
   geom_line(aes(color = variable), data = model_df[model_df$variable == "model_fit", ]) +
