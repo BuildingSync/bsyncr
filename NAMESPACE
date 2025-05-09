@@ -7,4 +7,3 @@ export(bs_parse_nmecr_df)
 export(bs_stub_bldg)
 export(bs_stub_derived_model)
 export(bs_stub_scenarios)
-
