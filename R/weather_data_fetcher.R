@@ -8,13 +8,11 @@ weather_data_fetcher <- R6Class(
   "weather_data_fetcher",
   public = list(
     station_id = NULL,
-    datatype_id = "TAVG",  # Temperature Average
+    datatype_id = "TAVG", # Temperature Average
     ts_start = NULL,
     ts_end = NULL,
     station_data = NULL,
     weather_data = NULL,
-
-
     initialize = function(station_id, ts_start, ts_end) {
       self$station_id <- station_id
       self$ts_start <- ts_start
@@ -24,7 +22,6 @@ weather_data_fetcher <- R6Class(
       # the this class for the first time.
       self$station_data <- rnoaa::ghcnd_stations()
     },
-
     get_nearest_station = function(lat, long) {
       lat_lon_df <- data.frame(
         id = c("my_building"),
@@ -39,13 +36,12 @@ weather_data_fetcher <- R6Class(
       )
       self$station_id <- nearby_stations$my_building$id
     },
-
     get_weather_data = function() {
       # check if station_id is NULL
       if (is.null(self$station_id)) {
         stop("Station ID is NULL. Please set the station ID first or call get_nearest_station()")
       }
-      
+
       # get MONTHLY temp data from station
       weather_result <- rnoaa::ncdc(
         datasetid = "GSOM",
@@ -60,7 +56,6 @@ weather_data_fetcher <- R6Class(
       self$weather_data <- weather_result$data
       return(self$weather_data)
     },
-
     to_df = function(n_samples = 12) {
       # convert the weather data to a data frame
 
@@ -83,7 +78,7 @@ weather_data_fetcher <- R6Class(
         temp = self$weather_data$value,
         units = self$weather_data$units
       )
-      
+
       # fix data types
       # temp_df[, "temp"] <- as.double(temp_df[, "temp"])
       # temp_df[, "time"] <- as.POSIXct.numeric(temp_df[, "time"], origin = lubridate::origin)

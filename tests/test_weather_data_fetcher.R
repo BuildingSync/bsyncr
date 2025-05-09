@@ -29,7 +29,7 @@ test_that("get_nearest_station correctly identifies the nearest station", {
 
   fetcher$get_nearest_station(lat = mock_lat, long = mock_long)
   cat(paste(" Nearest station ID:", fetcher$station_id, "\n"))
-  
+
   # Check that the station_id is not NULL and is the value for central park NYC
   expect_false(is.null(fetcher$station_id))
   expect_true(fetcher$station_id == "USW00094728")
@@ -62,13 +62,13 @@ test_that("get_weather_data fetches data correctly", {
   )
 
   # Fetch the weather data
-  weather_data = fetcher$get_weather_data()
-  
+  weather_data <- fetcher$get_weather_data()
+
   # Check that the data is not NULL and has the expected structure
   expect_false(is.null(fetcher$weather_data))
   expect_true(nrow(fetcher$weather_data) > 0)
 
-  df_weather_data = fetcher$to_df()
+  df_weather_data <- fetcher$to_df()
   print(df_weather_data)
 
   # check the structure of the data frame
