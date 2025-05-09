@@ -50,7 +50,7 @@ weather_data_fetcher <- R6Class(
         # messy solution, but ensures that we get data before our start time
         startdate = strftime(self$ts_start - (60 * 60 * 24 * 31), "%Y-%m-%dT%H:%M:%S"),
         enddate = self$ts_end,
-        add_units = TRUE,
+        add_units = TRUE
       )
 
       self$weather_data <- weather_result$data
